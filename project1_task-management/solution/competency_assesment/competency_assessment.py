@@ -18,7 +18,7 @@ class CompetencyAssessment():
             'gap': gap,
             'qs': qs}
 
-    return self.qs, info
+    return qs, info
 
   def calculate_poc_weight(self):
     required = {}
