@@ -5,7 +5,7 @@ class CompetencyAssessment():
     self.rcd_df = rcd_df
     self.acd_df = acd_df
 
-  def calculate(self):
+  def fit(self):
     weight = self.calculate_poc_weight()
     rcd_w, acd_w = self.apply_weight(weight)
     gap = self.cal_gap(rcd_w, acd_w)
