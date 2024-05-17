@@ -6,13 +6,19 @@ class CompetencyAssessment():
     self.acd_df = acd_df
 
   def fit(self):
-    self.weight = self.calculate_poc_weight()
-    self.rcd_w, self.acd_w = self.apply_weight(self.weight)
-    self.gap = self.cal_gap(self.rcd_w, self.acd_w)
-    self.qs = self.calculate_soq_suq(self.gap)
-    self.qs = self.calculate_MSG(self.qs)
+    weight = self.calculate_poc_weight()
+    rcd_w, acd_w = self.apply_weight(weight)
+    gap = self.cal_gap(rcd_w, acd_w)
+    qs = self.calculate_soq_suq(gap)
+    qs = self.calculate_MSG(qs)
 
-    return self.qs
+    info = {'weight': weight,
+            'rcd_w': rcd_w,
+            'acd_w': acd_w,
+            'gap': gap,
+            'qs': qs}
+
+    return self.qs, info
 
   def calculate_poc_weight(self):
     required = {}
