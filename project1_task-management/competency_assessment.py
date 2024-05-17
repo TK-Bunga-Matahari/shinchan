@@ -101,9 +101,13 @@ class CompetencyAssessment():
     ranking = {}
 
     for employee, task_qs in qs.items():
-      for task, values in task_qs.items():
-        if employee not in ranking:
-          ranking[employee] = {}
-        ranking[employee][task] = values[-2]
-    
+        for task, values in task_qs.items():
+            if employee not in ranking:
+                ranking[employee] = {}
+            ranking[employee][task] = values[-2]
+
+    # Sort each employee's tasks by MSG in descending order
+    for employee in ranking:
+        ranking[employee] = dict(sorted(ranking[employee].items(), key=lambda item: item[1], reverse=True))
+
     return ranking
