@@ -24,7 +24,7 @@ class CompetencyAssessment():
     required = {}
     weight = {}
 
-    for i, val in self.rcd_df.sum().items():
+    for i, val in self.rcd_df.items():
       required[i] = val
 
     total_req = sum(required.values())
