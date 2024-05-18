@@ -74,11 +74,11 @@ class CompetencyAssessment():
       for task, competency in tasks.items():
         soq, suq = 0, 0
 
-        for c, value in competency.items():
+        for c, value in competency.items():          
           for v in value:
             if v >= 0:
               soq += v
-            else:
+            elif v < 0:
               suq += v
 
         if employee not in qs:
