@@ -6,13 +6,13 @@ class CompetencyAssessment():
     self.acd_df = acd_df
 
   def fit(self):
-    weight = self.calculate_poc_weight()
+    weight = self.calculate_poc_weight()    
     rcd_w, acd_w = self.apply_weight(weight)
     gap = self.cal_gap(rcd_w, acd_w)
     qs = self.calculate_soq_suq(gap)
     qs = self.calculate_MSG(qs)
 
-    info = {'weight': weight,
+    info = {'weight': weight,            
             'rcd_w': rcd_w,
             'acd_w': acd_w,
             'gap': gap,
@@ -35,21 +35,12 @@ class CompetencyAssessment():
     
     return weight
   
-  def apply_weight(self, weight):
-    competency = self.rcd_df.columns.tolist()
-    
-    # initialize the dictionary with empty Series
-    rcd_w = {task: pd.Series(dtype=float) for task in self.rcd_df.index}
-    acd_w = {employee: {} for employee in self.acd_df.index}
+  def apply_weight(self, weight):    
+    weight_df = pd.DataFrame(weight)
 
-    # apply weight for RCD-ACD
-    for employee, acd in self.acd_df.iterrows():
-      for task, rcd in self.rcd_df.iterrows():
-        for c in competency:
-          rcd_w[task][c] = rcd[c] * weight.get(c, 0)
-          if task not in acd_w[employee]:
-            acd_w[employee][task] = {}
-          acd_w[employee][task][c] = acd[c] * weight.get(c, 0)    
+    rcd_w = self.rcd_df.mul(weight_df, axis=1)
+    acd_w = self.acd_df.applymap(lambda x: x * weight_df)
+    # acd_w = acd_w.to_dict(orient='index')
         
     return rcd_w, acd_w
 
