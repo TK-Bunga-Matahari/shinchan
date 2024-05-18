@@ -35,14 +35,18 @@ class CompetencyAssessment():
     
     return weight
   
-  def apply_weight(self, weight):    
+  def apply_weight(self, weight):
     weight_df = pd.DataFrame(weight)
 
-    rcd_w = self.rcd_df.mul(weight_df, axis=1)
-    acd_w = self.acd_df.applymap(lambda x: x * weight_df)
-    # acd_w = acd_w.to_dict(orient='index')
-        
-    return rcd_w, acd_w
+    rcd_w = self.rcd_df.mul(weight_df, axis=1).to_dict('index')
+
+    acd_w = {}
+    for j, row_j in self.acd_df.iterrows():
+        acd_w[j] = {}
+        for i, row_i in weight_df.iterrows():
+            acd_w[j][i] = row_j * row_i
+
+    return rcd_w, acd_w            
 
   def cal_gap(self, rcd_w, acd_w):
     competency = self.rcd_df.columns.tolist()
@@ -65,12 +69,11 @@ class CompetencyAssessment():
       for task, competency in tasks.items():
         soq, suq = 0, 0
 
-        for c, value in competency.items():          
-          for v in value:
-            if v >= 0:
-              soq += v
-            elif v < 0:
-              suq += v
+        for c, value in competency.items():                    
+          if value >= 0:
+            soq += value
+          elif value < 0:
+            suq += value
 
         if employee not in qs:
           qs[employee] = {}
