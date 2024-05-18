@@ -16,7 +16,8 @@ class CompetencyAssessment():
             'rcd_w': rcd_w,
             'acd_w': acd_w,
             'gap': gap,
-            'qs': qs}
+            'qs': qs
+           }
 
     return qs, info
 
@@ -73,21 +74,22 @@ class CompetencyAssessment():
       for task, competency in tasks.items():
         soq, suq = 0, 0
 
-        for value in competency.values():
-          if value >= 0:
-            soq += value
-          else:
-            suq += value
+        for c, value in competency.items():
+          for v in value:
+            if v >= 0:
+              soq += v
+            else:
+              suq += v
 
         if employee not in qs:
           qs[employee] = {}
-        
+
         qs[employee][task] = [soq, suq]
-    
+
     return qs
   
   def calculate_MSG(self, qs):
-    n = len(self.acd_df.index)
+    n = len(self.acd_df.columns)
 
     # calculate the msg
     for employee, task_qs in qs.items():
