@@ -1,184 +1,178 @@
 import pandas as pd
+import heapq
 
-class CompetencyAssessment():
-  def __init__(self, rcd_df, acd_df):
-    self.rcd_df = rcd_df
-    self.acd_df = acd_df
 
-  def fit(self):
-    weight = self.calculate_poc_weight()    
-    rcd_w, acd_w = self.apply_weight(weight)
-    gap = self.cal_gap(rcd_w, acd_w)
-    qs = self.calculate_soq_suq(gap)
-    qs = self.calculate_MSG(qs)
+class CompetencyAssessment:
+    def __init__(self, rcd_df, acd_df):
+        self.rcd_df = rcd_df
+        self.acd_df = acd_df
 
-    info = {'weight': weight,            
-            'rcd_w': rcd_w,
-            'acd_w': acd_w,
-            'gap': gap,
-            'qs': qs
-           }
+    def fit(self):
+        weight = self.calculate_poc_weight()
+        rcd_w, acd_w = self.apply_weight(weight)
+        gap = self.cal_gap(rcd_w, acd_w)
+        qs = self.calculate_soq_suq(gap)
+        qs = self.calculate_MSG(qs)
 
-    return qs, info
+        info = {"weight": weight, "rcd_w": rcd_w, "acd_w": acd_w, "gap": gap, "qs": qs}
 
-  def calculate_poc_weight(self):
-    required = {}
-    weight = {}
+        return qs, info
 
-    for i, val in self.rcd_df.items():
-      required[i] = val
+    def calculate_poc_weight(self):
+        required = {}
+        weight = {}
 
-    total_req = sum(required.values())
+        for i, val in self.rcd_df.items():
+            required[i] = val
 
-    for competency, val in required.items():
-      weight[competency] = val / total_req
+        total_req = sum(required.values())
 
-    return weight
+        for competency, val in required.items():
+            weight[competency] = val / total_req
 
-  def apply_weight(self, weight):
-    weight_df = pd.DataFrame(weight)
+        return weight
 
-    rcd_w = self.rcd_df.mul(weight_df, axis=1).to_dict('index')
+    def apply_weight(self, weight):
+        weight_df = pd.DataFrame(weight)
 
-    acd_w = {}
-    for j, row_j in self.acd_df.iterrows():
-      acd_w[j] = {}
-      for i, row_i in weight_df.iterrows():
-        acd_w[j][i] = row_j * row_i
+        rcd_w = self.rcd_df.mul(weight_df, axis=1).to_dict("index")
 
-    return rcd_w, acd_w            
+        acd_w = {}
+        for j, row_j in self.acd_df.iterrows():
+            acd_w[j] = {}
+            for i, row_i in weight_df.iterrows():
+                acd_w[j][i] = row_j * row_i
 
-  def cal_gap(self, rcd_w, acd_w):
-    competency = self.rcd_df.columns.tolist()
+        return rcd_w, acd_w
 
-    gap = {employee: {} for employee in self.acd_df.index}
+    def cal_gap(self, rcd_w, acd_w):
+        competency = self.rcd_df.columns.tolist()
 
-    for employee in acd_w:
-      for task in rcd_w:
-        for c in competency:
-          if task not in gap[employee]:
-            gap[employee][task] = {}
-          gap[employee][task][c] = acd_w[employee][task][c] - rcd_w[task][c]
+        gap = {employee: {} for employee in self.acd_df.index}
 
-    return gap
+        for employee in acd_w:
+            for task in rcd_w:
+                for c in competency:
+                    if task not in gap[employee]:
+                        gap[employee][task] = {}
+                    gap[employee][task][c] = acd_w[employee][task][c] - rcd_w[task][c]
 
-  def calculate_soq_suq(self, gap):
-    qs = {}
+        return gap
 
-    for employee, tasks in gap.items():
-      for task, competency in tasks.items():
-        soq, suq = 0, 0
+    def calculate_soq_suq(self, gap):
+        qs = {}
 
-        for c, value in competency.items():                    
-          if value >= 0:
-            soq += value
-          elif value < 0:
-            suq += value
+        for employee, tasks in gap.items():
+            for task, competency in tasks.items():
+                soq, suq = 0, 0
 
-        if employee not in qs:
-          qs[employee] = {}
+                for c, value in competency.items():
+                    if value >= 0:
+                        soq += value
+                    elif value < 0:
+                        suq += value
 
-        qs[employee][task] = [soq, suq]
+                if employee not in qs:
+                    qs[employee] = {}
 
-    return qs
+                qs[employee][task] = [soq, suq]
 
-  def calculate_MSG(self, qs):
-    n = len(self.acd_df.columns)
+        return qs
 
-    for employee, task_qs in qs.items():
-      for task, values in task_qs.items():
-        soq, suq = values[0], values[1]
-        msg = (soq + suq) / n
-        qs[employee][task] += [msg]
+    def calculate_MSG(self, qs):
+        n = len(self.acd_df.columns)
 
-        if msg >= 0:
-          qs[employee][task] += ['Qualified']
-        else:
-          qs[employee][task] += ['Under-Qualified']
+        for employee, task_qs in qs.items():
+            for task, values in task_qs.items():
+                soq, suq = values[0], values[1]
+                msg = (soq + suq) / n
+                qs[employee][task] += [msg]
 
-    return qs
+                if msg >= 0:
+                    qs[employee][task] += ["Qualified"]
+                else:
+                    qs[employee][task] += ["Under-Qualified"]
 
-  def rank_MSG(self, qs):
-    ranking = {}
+        return qs
 
-    for employee, task_qs in qs.items():
-      for task, values in task_qs.items():
-        if employee not in ranking:
-          ranking[employee] = {}
-        ranking[employee][task] = values[-2]
+    def rank_MSG(self, qs):
+        ranking = {}
 
-    for employee in ranking:
-      ranking[employee] = dict(sorted(ranking[employee].items(), key=lambda item: item[1], reverse=True))
+        for employee, task_qs in qs.items():
+            for task, values in task_qs.items():
+                if employee not in ranking:
+                    ranking[employee] = {}
+                ranking[employee][task] = values[-2]
 
-    return ranking
-  
-  def all_top_n_score(self, score, n):
-    top_n = int(self.rcd_df.shape[0] * (n/100))
-    top_n_score = {}
+        for employee in ranking:
+            ranking[employee] = dict(
+                sorted(
+                    ranking[employee].items(), key=lambda item: item[1], reverse=True
+                )
+            )
 
-    for employee, tasks in score.items():
-      # Sort tasks by MSG score in descending order and keep only top-n%
-      sorted_tasks = dict(sorted(tasks.items(), key=lambda item: item[1], reverse=True)[:top_n])
-      top_n_score[employee] = sorted_tasks
-    
-    return top_n_score
+        return ranking
 
-  def top_n_score(self, score, n):
-    # Calculate initial top_n based on the provided percentage
-    initial_top_n = int(self.rcd_df.shape[0] * (n / 100))
+    def top_n_score(self, score, n):
+        top_n = int(self.rcd_df.shape[0] * (n / 100))
+        top_n_score = {}
 
-    # Determine if each employee can get at least 3 tasks
-    total_employees = len(score)
-    required_tasks = total_employees * 3
-    available_tasks = self.rcd_df.shape[0]
+        for employee, tasks in score.items():
+            # Sort tasks by MSG score in descending order and keep only top-n%
+            sorted_tasks = dict(
+                sorted(tasks.items(), key=lambda item: item[1], reverse=True)[:top_n]
+            )
+            top_n_score[employee] = sorted_tasks
 
-    # Adjust top_n if needed
-    if initial_top_n * total_employees < required_tasks:
-      top_n = available_tasks // total_employees
-      print(f"Sorry, for each employee to have 3 tasks, the maximum is only top {top_n * 100 / available_tasks:.2f}%")
-    else:
-      top_n = initial_top_n
+        return top_n_score
 
-    top_n_score = {}
-    assigned_tasks = set()
+    def top_score(self, score):
+        assigned_tasks = {}
+        task_assignment = {talent: {} for talent in score}
+        all_tasks = {task for tasks in score.values() for task in tasks}
+        remaining_tasks = all_tasks.copy()
+        talent_heap = []
 
-    sorted_employees = sorted(score.keys(), key=lambda e: max(score[e].values()), reverse=True)
+        # Initialize heap with talents and their max scores
+        for talent in score:
+            heapq.heappush(talent_heap, (-max(score[talent].values()), talent))
 
-    for employee in sorted_employees:
-      sorted_tasks = sorted(score[employee].items(), key=lambda item: item[1], reverse=True)
-      top_tasks = []
-      for task, task_score in sorted_tasks:
-        if len(top_tasks) < top_n and task not in assigned_tasks:
-          top_tasks.append((task, task_score))
-          assigned_tasks.add(task)
-      top_n_score[employee] = dict(top_tasks)
+        # Assign tasks based on highest scores first
+        while talent_heap and remaining_tasks:
+            _, talent = heapq.heappop(talent_heap)
+            for task, task_score in sorted(
+                score[talent].items(), key=lambda item: item[1], reverse=True
+            ):
+                if task in remaining_tasks and task_score >= 0:
+                    task_assignment[talent][task] = task_score
+                    assigned_tasks[task] = (talent, task_score)
+                    remaining_tasks.remove(task)
+                    break
 
-    # Ensure each employee has at least 3 tasks
-    for employee in score.keys():
-      if len(top_n_score[employee]) < 3:
-        remaining_tasks = [(task, score[employee][task]) for task in score[employee] if task not in assigned_tasks]
-        remaining_tasks = sorted(remaining_tasks, key=lambda item: item[1], reverse=True)[:3 - len(top_n_score[employee])]
-        for task, task_score in remaining_tasks:
-          top_n_score[employee][task] = task_score
-          assigned_tasks.add(task)
+        # Ensure every talent has at least one task
+        for talent in score:
+            if not task_assignment[talent]:
+                for task, task_score in sorted(
+                    score[talent].items(), key=lambda item: item[1], reverse=True
+                ):
+                    if task not in assigned_tasks:
+                        task_assignment[talent][task] = task_score
+                        assigned_tasks[task] = (talent, task_score)
+                        remaining_tasks.remove(task)
+                        break
 
-    # Reassign tasks from employees with more than 3 tasks if necessary
-    for employee in top_n_score:
-      if len(top_n_score[employee]) < 3:
-        additional_tasks = []
-        for other_employee in top_n_score:
-          if other_employee != employee and len(top_n_score[other_employee]) > 3:
-            other_tasks = list(top_n_score[other_employee].items())
-            for task, task_score in other_tasks:
-              if len(top_n_score[employee]) < 3 and task not in top_n_score[employee]:
-                additional_tasks.append((task, task_score))
-                del top_n_score[other_employee][task]
-                if len(top_n_score[other_employee]) <= 3:
-                  break
-        additional_tasks = sorted(additional_tasks, key=lambda item: item[1], reverse=True)
-        while len(top_n_score[employee]) < 3 and additional_tasks:
-          task, task_score = additional_tasks.pop(0)
-          top_n_score[employee][task] = task_score
-          assigned_tasks.add(task)
+        # Assign remaining tasks (including those with scores < 0)
+        while remaining_tasks:
+            for talent in score:
+                if not remaining_tasks:
+                    break
+                for task, task_score in sorted(
+                    score[talent].items(), key=lambda item: item[1], reverse=True
+                ):
+                    if task in remaining_tasks:
+                        task_assignment[talent][task] = task_score
+                        assigned_tasks[task] = (talent, task_score)
+                        remaining_tasks.remove(task)
+                        break
 
-    return top_n_score
+        return task_assignment
