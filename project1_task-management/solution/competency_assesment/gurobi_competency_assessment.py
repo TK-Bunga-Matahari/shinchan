@@ -26,7 +26,7 @@ def export_dict_to_csv(data_dict, file_path):
     # Open a CSV file for writing
     with open(file_path, mode="w", newline="") as file:
         # Create a CSV writer object
-        writer = csv.DictWriter(file, fieldnames=data_dict[0].keys())
+        writer = csv.DictWriter(file, fieldnames=list(data_dict[0].keys()))
 
         # Write the header
         writer.writeheader()
@@ -101,9 +101,10 @@ def s1_data_structure():
     """### 1.4.5 Sorted MSG Score for All Tasks"""
 
     score = ca.rank_MSG(qs)
+    score_df = pd.DataFrame.from_dict(score, orient="index")
 
     # Export the score dictionary to CSV
-    export_dict_to_csv(score, "./output/score/score.csv")
+    score_df.to_csv("./output/score/score.csv")
 
     return employees, skills_name, tasks, story_points, company_tasks, score
 
@@ -730,46 +731,82 @@ def main():
     print(header)
     wait_for_y()
 
-    # Execute the steps
+    """
+    =============================================
+    
+                Execute the Steps
+    
+    =============================================
+    """
+
+    # Section 1
     employees, skills_name, tasks, story_points, company_tasks, score = (
         s1_data_structure()
     )
+
+    print(f"Section 1: Data Structure Run Successfully")
+    print(f"score.csv has been saved in the output/score folder.\n\n")
+
+    # Section 2
     model = s2_construct_model()
+    print()
+    print(f"Section 2: Construct Model Run Successfully\n\n")
+
+    # Section 3
     x, y, max_employee_workload, max_workload = s3_decision_variable(
         model, employees, company_tasks
     )
-    s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload)
+    print()
+    print(f"Section 3: Build Decision Variable Run Successfully\n\n")
 
-    # Objectives
-    mu_Z_1, assessment_score_1 = s5_objective1(
-        model, employees, company_tasks, y, score, story_points, max_employee_workload
-    )
-    mu_Z_2, assessment_score_2 = s6_objective2(
-        model, employees, company_tasks, x, score, story_points, max_employee_workload
-    )
-    mu_Z_3, assessment_score_3 = s7_objective3(
-        model,
-        employees,
-        company_tasks,
-        score,
-        story_points,
-        max_employee_workload,
-        max_workload,
-    )
-    s8_MOO_1(
-        model,
-        employees,
-        company_tasks,
-        score,
-        story_points,
-        max_employee_workload,
-        mu_Z_1,
-        mu_Z_2,
-        mu_Z_3,
-        assessment_score_1,
-        assessment_score_2,
-        assessment_score_3,
-    )
+    # Section 4
+    s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload)
+    print(f"Section 4: Set Constraint Run Successfully\n\n")
+
+    """
+    =============================================
+    
+                Solve The Objective
+    
+    =============================================
+    """
+
+    # Section 5
+    # mu_Z_1, assessment_score_1 = s5_objective1(
+    #     model, employees, company_tasks, y, score, story_points, max_employee_workload
+    # )
+
+    # Section 6
+    # mu_Z_2, assessment_score_2 = s6_objective2(
+    #     model, employees, company_tasks, x, score, story_points, max_employee_workload
+    # )
+
+    # Section 7
+    # mu_Z_3, assessment_score_3 = s7_objective3(
+    #     model,
+    #     employees,
+    #     company_tasks,
+    #     score,
+    #     story_points,
+    #     max_employee_workload,
+    #     max_workload,
+    # )
+
+    # Section 8
+    # s8_MOO_1(
+    #     model,
+    #     employees,
+    #     company_tasks,
+    #     score,
+    #     story_points,
+    #     max_employee_workload,
+    #     mu_Z_1,
+    #     mu_Z_2,
+    #     mu_Z_3,
+    #     assessment_score_1,
+    #     assessment_score_2,
+    #     assessment_score_3,
+    # )
 
 
 if __name__ == "__main__":
