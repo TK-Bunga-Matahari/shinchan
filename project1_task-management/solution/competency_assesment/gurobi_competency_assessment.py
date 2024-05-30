@@ -9,6 +9,8 @@ _by: TK-Bunga Matahari Team_
 """
 
 # Import library
+import json
+import requests
 import threading
 import numpy as np
 import pandas as pd
@@ -816,6 +818,19 @@ def close_plot():
     plt.close()
 
 
+def send_discord_notification(message):
+    url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
+    data = {"content": message}
+    response = requests.post(
+        url, data=json.dumps(data), headers={"Content-Type": "application/json"}
+    )
+
+    if response.status_code == 204:
+        print("Notification sent successfully.")
+    else:
+        print("Failed to send notification.")
+
+
 def main():
     header = """
     ==============================================
@@ -826,6 +841,11 @@ def main():
     """
     print(header)
     wait_for_y()
+
+    header_msg = (
+        f"Task Assignment Optimization Problem: START with Competence Assessment"
+    )
+    send_discord_notification(header_msg)
 
     """
     =============================================
@@ -841,13 +861,18 @@ def main():
             s1_data_structure_CA()
         )
 
-        print(f"Section 1: Data Structure Run Successfully")
-        print(f"score.csv has been saved in the output/score folder.\n\n")
+        section_1_msg_1 = f"Section 1: Data Structure Run Successfully"
+        section_1_msg_2 = f"score.csv has been saved in the output/score folder.\n\n"
+        print(section_1_msg_1)
+        print(section_1_msg_2)
+        send_discord_notification(section_1_msg_1)
+        send_discord_notification(section_1_msg_2)
 
         # Section 2
         model = s2_construct_model()
         if model:
             print(f"Section 2: Construct Model Run Successfully\n\n")
+            send_discord_notification("Section 2: Construct Model Run Successfully")
         else:
             raise Exception("Model construction failed.")
 
@@ -857,12 +882,16 @@ def main():
         )
         if x and y:
             print(f"Section 3: Build Decision Variable Run Successfully\n\n")
+            send_discord_notification(
+                "Section 3: Build Decision Variable Run Successfully"
+            )
         else:
             raise Exception("Decision variable construction failed.")
 
         # Section 4
         s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload)
         print(f"Section 4: Set Constraint Run Successfully\n\n")
+        send_discord_notification("Section 4: Set Constraint Run Successfully")
 
         """
         =============================================
@@ -884,6 +913,7 @@ def main():
         )
         if mu_Z_1 and assessment_score_1 is not None:
             print(f"Section 5: Objective 1 Run Successfully\n\n")
+            send_discord_notification("Section 5: Objective 1 Run Successfully")
         else:
             raise Exception("Objective 1 failed.")
 
@@ -899,6 +929,7 @@ def main():
         )
         if mu_Z_2 and assessment_score_2 is not None:
             print(f"Section 6: Objective 2 Run Successfully\n\n")
+            send_discord_notification("Section 6: Objective 2 Run Successfully")
         else:
             raise Exception("Objective 2 failed.")
 
@@ -914,6 +945,7 @@ def main():
         )
         if mu_Z_3 and assessment_score_3 is not None:
             print(f"Section 7: Objective 3 Run Successfully\n\n")
+            send_discord_notification("Section 7: Objective 3 Run Successfully")
         else:
             raise Exception("Objective 3 failed.")
 
@@ -933,10 +965,16 @@ def main():
             assessment_score_3,
         )
         print(f"Section 8: MOO Method 1 Run Successfully\n\n")
+        send_discord_notification("Section 8: MOO Method 1 Run Successfully")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        send_discord_notification("Script ran successfully.")
+    except Exception as e:
+        error_message = str(e)
+        send_discord_notification(f"Script failed with error: {error_message}")
