@@ -445,6 +445,7 @@ def s6_objective2(
         columns=["company", "assigned_task", "sum_sp", "wasted_sp", "assessment_score"],
     )
     result_2.index.name = "employee"
+    result_2.to_csv("./output/result_2.csv")
 
     """### 6.3.1 Statistics of The Objective"""
 
@@ -476,6 +477,7 @@ def s6_objective2(
     assessment_score_2 = result_2["assessment_score"].explode().reset_index(drop=True)
     assessment_score_2.plot(kind="box")
     plt.title("Assessment Score Boxplot of Objective 2")
+    plt.savefig("./output/objective_2.png")
     plt.show()
 
     return mu_Z_2, assessment_score_2
@@ -539,6 +541,8 @@ def s7_objective3(
     )
     result_3.index.name = "employee"
 
+    result_3.to_csv("./output/result_3.csv")
+
     """### 7.3.1 Statistics of The Objective"""
 
     total_employee = len(employees)
@@ -569,6 +573,7 @@ def s7_objective3(
     assessment_score_3 = result_3["assessment_score"].explode().reset_index(drop=True)
     assessment_score_3.plot(kind="box")
     plt.title("Assessment Score Boxplot of Objective 3")
+    plt.savefig("./output/objective_3.png")
     plt.show()
 
     return mu_Z_3, assessment_score_3
@@ -641,6 +646,8 @@ def s8_MOO_1(
     )
     result_4.index.name = "employee"
 
+    result_4.to_csv("./output/result_4_MOO_1.csv")
+
     """### 8.3.1 Statistics of The Objective"""
 
     total_employee = len(employees)
@@ -671,6 +678,7 @@ def s8_MOO_1(
     assessment_score_4 = result_4["assessment_score"].explode().reset_index(drop=True)
     assessment_score_4.plot(kind="box")
     plt.title("Assessment Score Boxplot of MOO Method 1")
+    plt.savefig("./output/MOO_1.png")
     plt.show()
 
     """## 8.4 Comparing MOO Method 3 to Single Objective"""
@@ -693,6 +701,7 @@ def s8_MOO_1(
     )
     plt.title("Overall Assessment Score Boxplot")
     plt.xticks(rotation=15)
+    plt.savefig("./output/compare_SO_MOO_1.png")
     plt.show()
 
 
@@ -760,11 +769,15 @@ def main():
     mu_Z_1, assessment_score_1 = s5_objective1(
         model, employees, company_tasks, y, score, story_points, max_employee_workload
     )
+    print()
+    print(f"Section 5: Objective 1 Run Successfully\n\n")
 
     # Section 6
-    # mu_Z_2, assessment_score_2 = s6_objective2(
-    #     model, employees, company_tasks, x, score, story_points, max_employee_workload
-    # )
+    mu_Z_2, assessment_score_2 = s6_objective2(
+        model, employees, company_tasks, x, score, story_points, max_employee_workload
+    )
+    print()
+    print(f"Section 6: Objective 2 Run Successfully\n\n")
 
     # Section 7
     # mu_Z_3, assessment_score_3 = s7_objective3(
