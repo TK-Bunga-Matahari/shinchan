@@ -9,6 +9,7 @@ _by: TK-Bunga Matahari Team_
 """
 
 # Import library
+import threading
 import numpy as np
 import pandas as pd
 import gurobipy as gp
@@ -372,6 +373,10 @@ def s5_objective1(
 
     """### 5.3.2. Distribution With Respect to the Assessment Score"""
 
+    # timer for auto close plot
+    timer = threading.Timer(3, close_plot)
+    timer.start()
+
     # make boxplot for objective 1 with respect to the assessment score
     assessment_score_1 = result_1["assessment_score"].explode().reset_index(drop=True)
     assessment_score_1.plot(kind="box")
@@ -473,6 +478,10 @@ def s6_objective2(
 
     """### 6.3.2. Distribution With Respect to the Assessment Score"""
 
+    # timer for auto close plot
+    timer = threading.Timer(3, close_plot)
+    timer.start()
+
     # make boxplot for objective 1 with respect to the assessment score
     assessment_score_2 = result_2["assessment_score"].explode().reset_index(drop=True)
     assessment_score_2.plot(kind="box")
@@ -568,6 +577,10 @@ def s7_objective3(
     )
 
     """### 7.3.2. Distribution With Respect to the Assessment Score"""
+
+    # timer for auto close plot
+    timer = threading.Timer(3, close_plot)
+    timer.start()
 
     # make boxplot for objective 1 with respect to the assessment score
     assessment_score_3 = result_3["assessment_score"].explode().reset_index(drop=True)
@@ -674,6 +687,10 @@ def s8_MOO_1(
 
     """### 8.3.2. Distribution With Respect to the Assessment Score"""
 
+    # timer for auto close plot
+    timer = threading.Timer(3, close_plot)
+    timer.start()
+
     # make boxplot for objective 1 with respect to the assessment score
     assessment_score_4 = result_4["assessment_score"].explode().reset_index(drop=True)
     assessment_score_4.plot(kind="box")
@@ -682,6 +699,10 @@ def s8_MOO_1(
     plt.show()
 
     """## 8.4 Comparing MOO Method 3 to Single Objective"""
+
+    # timer for auto close plot
+    timer = threading.Timer(3, close_plot)
+    timer.start()
 
     # merge all boxplot in one graph
     plt.figure(figsize=(10, 5))
@@ -703,6 +724,7 @@ def s8_MOO_1(
     plt.xticks(rotation=15)
     plt.savefig("./output/compare_SO_MOO_1.png")
     plt.show()
+    plt.close()
 
 
 def wait_for_y():
@@ -713,6 +735,10 @@ def wait_for_y():
             break
         else:
             print("Invalid input. Please press 'Y'.")
+
+
+def close_plot():
+    plt.close()
 
 
 def main():
@@ -780,31 +806,31 @@ def main():
     print(f"Section 6: Objective 2 Run Successfully\n\n")
 
     # Section 7
-    # mu_Z_3, assessment_score_3 = s7_objective3(
-    #     model,
-    #     employees,
-    #     company_tasks,
-    #     score,
-    #     story_points,
-    #     max_employee_workload,
-    #     max_workload,
-    # )
+    mu_Z_3, assessment_score_3 = s7_objective3(
+        model,
+        employees,
+        company_tasks,
+        score,
+        story_points,
+        max_employee_workload,
+        max_workload,
+    )
 
     # Section 8
-    # s8_MOO_1(
-    #     model,
-    #     employees,
-    #     company_tasks,
-    #     score,
-    #     story_points,
-    #     max_employee_workload,
-    #     mu_Z_1,
-    #     mu_Z_2,
-    #     mu_Z_3,
-    #     assessment_score_1,
-    #     assessment_score_2,
-    #     assessment_score_3,
-    # )
+    s8_MOO_1(
+        model,
+        employees,
+        company_tasks,
+        score,
+        story_points,
+        max_employee_workload,
+        mu_Z_1,
+        mu_Z_2,
+        mu_Z_3,
+        assessment_score_1,
+        assessment_score_2,
+        assessment_score_3,
+    )
 
 
 if __name__ == "__main__":
