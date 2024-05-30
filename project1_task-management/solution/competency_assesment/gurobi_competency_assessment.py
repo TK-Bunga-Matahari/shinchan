@@ -722,12 +722,12 @@ def wait_for_y():
 
 def main():
     header = """
-===========================================
+    ==============================================
 
-   TASK ASSIGNMENT OPTIMIZATION PROBLEM
+        TASK ASSIGNMENT OPTIMIZATION PROBLEM
 
-===========================================
-"""
+    ==============================================
+    """
     print(header)
     wait_for_y()
 
@@ -756,7 +756,6 @@ def main():
     x, y, max_employee_workload, max_workload = s3_decision_variable(
         model, employees, company_tasks
     )
-    print()
     print(f"Section 3: Build Decision Variable Run Successfully\n\n")
 
     # Section 4
