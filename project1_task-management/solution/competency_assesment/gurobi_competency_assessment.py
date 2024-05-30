@@ -1,37 +1,49 @@
-def not_included():
-    # -*- coding: utf-8 -*-
-    """
-    # Task Assignment Optimization Problem with Gurobi Framework
+"""
+# Task Assignment Optimization Problem with Gurobi Framework
 
-    _by: TK-Bunga Matahari Team_
+_by: TK-Bunga Matahari Team_
 
-    ---
+---
 
-    # 0. The Obligatory Part
-    """
+# 0. The Obligatory Part
+"""
 
-    # Import library
-    import numpy as np
-    import pandas as pd
-    import gurobipy as gp
-    import matplotlib.pyplot as plt
-    from gurobipy import GRB, quicksum
-    from competency_assessment import CompetencyAssessment
+# Import library
+import csv
+import numpy as np
+import pandas as pd
+import gurobipy as gp
+import matplotlib.pyplot as plt
+from gurobipy import GRB, quicksum
+from competency_assessment import CompetencyAssessment
 
-    """# 1. Define the Data Structure
 
-    """
+def export_dict_to_csv(data_dict, file_path):
+    # Ensure the dictionary is not empty
+    if not data_dict:
+        raise ValueError("The dictionary is empty")
+
+    # Open a CSV file for writing
+    with open(file_path, mode="w", newline="") as file:
+        # Create a CSV writer object
+        writer = csv.DictWriter(file, fieldnames=data_dict[0].keys())
+
+        # Write the header
+        writer.writeheader()
+
+        # Write the data
+        for row in data_dict:
+            writer.writerow(row)
+
+
+def s1_data_structure():
+    """# 1. Define the Data Structure"""
 
     # Run this if the data in Local/Repository
     new_employee_path = "./mini_data/mini_data - employee.csv"
     new_task_path = "./mini_data/mini_data - task.csv"
 
-    # new_employee_path = '/content/drive/MyDrive/Tadika Mesra Bunga Matahari/#1 Optimization Problem/project1_task-assignment/data/fixed/fixed_data_employee.csv'
-    # new_task_path = '/content/drive/MyDrive/Tadika Mesra Bunga Matahari/#1 Optimization Problem/project1_task-assignment/data/fixed/fixed_data_task.csv'
-
-    """## 1.1. Pre-Processing: Employee Data
-
-    """
+    """## 1.1. Pre-Processing: Employee Data"""
 
     # Read data
     employee_skills_df = pd.read_csv(new_employee_path, index_col="employee_id")
@@ -40,9 +52,7 @@ def not_included():
     employees = employee_skills_df.index.tolist()
     skills_name = employee_skills_df.columns[1:].tolist()
 
-    """## 1.2. Pre-Processing: Task Data
-
-    """
+    """## 1.2. Pre-Processing: Task Data"""
 
     task_df = pd.read_csv(new_task_path, index_col="task_id")
 
@@ -50,9 +60,7 @@ def not_included():
     company_names = list(set(task_df["project_id"]))
     story_points = task_df["story_points"].to_dict()
 
-    """## 1.3. Group the task data by company/project
-
-    """
+    """## 1.3. Group the task data by company/project"""
 
     # convert to dictionary each company and its task
     company_tasks = {}
@@ -67,45 +75,70 @@ def not_included():
 
     company_tasks_df = pd.DataFrame.from_dict(company_tasks, orient="index")
 
-    """## 1.4. Pre-Processing: Competency Assesment
+    """## 1.4. Pre-Processing: Competency Assessment
 
     First, create RCD-ACD Dataframe that we get from Task Dataframe for RCD and from Employee Dataframe for ACD.
 
     ### 1.4.1 Required Competence Data
-
     """
 
     rcd_df = task_df.drop(columns=["project_id", "story_points"])
     rcd_df = rcd_df.fillna(0)
 
-    """### 1.4.2 Acquired Competence Data
-
-    """
+    """### 1.4.2 Acquired Competence Data"""
 
     # create a copy of the original DataFrame
     acd_df = employee_skills_df.copy()
     acd_df = acd_df.fillna(0)
 
-    """### 1.4.3 Fit the Data
-
-    """
+    """### 1.4.3 Fit the Data"""
 
     ca = CompetencyAssessment(rcd_df, acd_df)
     qs, info = ca.fit()
 
-    """### 1.4.4 Qualification Space
+    """### 1.4.4 Qualification Space"""
 
-    """
-
-    """### 1.4.5 Sorted MSG Score for All Tasks
-
-    """
+    """### 1.4.5 Sorted MSG Score for All Tasks"""
 
     score = ca.rank_MSG(qs)
 
-    """# 2. Construct the Model
+    # Export the score dictionary to CSV
+    export_dict_to_csv(score, "./output/score/score.csv")
 
-    """
+    return employees, skills_name, tasks, story_points, company_tasks, score
+
+
+"""#### Generic Function"""
+
+
+# Extracting and printing the results
+def get_employee_tasks(
+    j, company_tasks, model, score, story_points, max_employee_workload
+):
+    task = []
+    sim = []
+    comp = []
+    sp = 0
+
+    for k, tasks in company_tasks.items():
+        for i in tasks:
+            if model.getVarByName(f"x_{i}_{j}_{k}").X == 1:
+                print(f"Task {i} assigned to Employee {j}")
+                print(f"Company\t\t\t: {k}")
+                print(f"Story Points\t\t: {story_points[i]}")
+                print(f"Metrics score\t: {score[j][i]:.10f}\n")
+
+                task.append(i)
+                sim.append(score[j][i])
+                comp.append(k)
+                sp += story_points[i]
+
+    wasted_sp = max_employee_workload - sp if sp > 0 else 0
+    return comp, task, sp, wasted_sp, sim
+
+
+def s2_construct_model():
+    """# 2. Construct the Model"""
 
     WLSACCESSID = "f26730de-b14b-4197-9dbd-7d12372b5d9e"
     WLSSECRET = "4ff3e9d2-037b-47c4-898d-6de34404e994"
@@ -122,6 +155,10 @@ def not_included():
     # Create the model within the Gurobi environment
     model = gp.Model(name="task_assignment", env=env)
 
+    return model
+
+
+def s3_decision_variable(model, employees, company_tasks):
     """# 3. Build the Decision Variable
 
     We have 3 sets:
@@ -180,15 +217,16 @@ def not_included():
     # Integrate new variables
     model.update()
 
-    print(x)
-    print(y)
+    return x, y, max_employee_workload, max_workload
 
+
+def s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload):
     """# 4. Subject to the Constraint
 
     ## 4.1. Constraint 1: Each Task is Assigned to One Employee
 
     $$
-    \\sum _{j\\in J}\\:x_{ijk}\\:=\\:1 \\quad \forall i \\in k, \\: k \\in K
+    \\sum _{j\\in J}\\:x_{ijk}\\:=\\:1 \\quad \\forall i \\in k, \\: k \\in K
     $$
 
     """
@@ -219,7 +257,7 @@ def not_included():
             model.addGenConstrIndicator(y[j, k], False, temp_sum, GRB.LESS_EQUAL, 0)
 
     """$$
-    \\sum _{k\\in K}y_{jk}\\le 1 \\quad \forall j\\in J
+    \\sum _{k\\in K}y_{jk}\\le 1 \\quad \\forall j\\in J
     $$
 
     """
@@ -240,8 +278,7 @@ def not_included():
     for j in employees:
         for k, tasks in company_tasks.items():
             model.addConstr(
-                quicksum(story_points[i] * x[(i, j, k)] for i in tasks)
-                <= max_employee_workload
+                quicksum(story_points[i] * x[(i, j, k)] for i in tasks) <= max_workload
             )
 
     """## 4.4 Constraint 4: Maximum workload is greater than or equal to the workload of each employee For Objective 3
@@ -263,6 +300,10 @@ def not_included():
             )
         )
 
+
+def s5_objective1(
+    model, employees, company_tasks, y, score, story_points, max_employee_workload
+):
     """# 5. Single Objective Approach: 1) Minimize The Idle Employee
     ## 5.1. Set The Objective Model
 
@@ -286,33 +327,6 @@ def not_included():
 
     # solve the model
     model.optimize()
-
-    """#### Generic Function"""
-
-    # Extracting and printing the results
-    def get_employee_tasks(
-        j, company_tasks, model, score, story_points, max_employee_workload
-    ):
-        task = []
-        sim = []
-        comp = []
-        sp = 0
-
-        for k, tasks in company_tasks.items():
-            for i in tasks:
-                if x[i, j, k].X == 1:
-                    print(f"Task {i} assigned to Employee {j}")
-                    print(f"Company\t\t\t: {k}")
-                    print(f"Story Points\t\t: {story_points[i]}")
-                    print(f"Metrics score\t: {score[j][i]:.10f}\n")
-
-                    task.append(i)
-                    sim.append(score[j][i])
-                    comp.append(k)
-                    sp += story_points[i]
-
-        wasted_sp = max_employee_workload - sp if sp > 0 else 0
-        return comp, task, sp, wasted_sp, sim
 
     """### 5.2.1 Print The Solver Results"""
 
@@ -378,6 +392,12 @@ def not_included():
     plt.title("Assessment Score Boxplot of Objective 1")
     plt.show()
 
+    return mu_Z_1, assessment_score_1
+
+
+def s6_objective2(
+    model, employees, company_tasks, x, score, story_points, max_employee_workload
+):
     """# 6. Single Objective Approach: 2) Maximize The Assessment Score
     ## 6.1. Set The Objective Model
 
@@ -471,6 +491,18 @@ def not_included():
     plt.title("Assessment Score Boxplot of Objective 2")
     plt.show()
 
+    return mu_Z_2, assessment_score_2
+
+
+def s7_objective3(
+    model,
+    employees,
+    company_tasks,
+    score,
+    story_points,
+    max_employee_workload,
+    max_workload,
+):
     """# 7. Single Objective Approach: 3) Balancing Workload For Each Employee
     ## 7.1. Set The Objective Model
 
@@ -552,6 +584,23 @@ def not_included():
     plt.title("Assessment Score Boxplot of Objective 3")
     plt.show()
 
+    return mu_Z_3, assessment_score_3
+
+
+def s8_MOO_1(
+    model,
+    employees,
+    company_tasks,
+    score,
+    story_points,
+    max_employee_workload,
+    mu_Z_1,
+    mu_Z_2,
+    mu_Z_3,
+    assessment_score_1,
+    assessment_score_2,
+    assessment_score_3,
+):
     """# 8. Multi-Objective Approach: 1) Weighted Method
     ## 8.1. Set The Objective Model
 
@@ -680,6 +729,47 @@ def main():
 """
     print(header)
     wait_for_y()
+
+    # Execute the steps
+    employees, skills_name, tasks, story_points, company_tasks, score = (
+        s1_data_structure()
+    )
+    model = s2_construct_model()
+    x, y, max_employee_workload, max_workload = s3_decision_variable(
+        model, employees, company_tasks
+    )
+    s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload)
+
+    # Objectives
+    mu_Z_1, assessment_score_1 = s5_objective1(
+        model, employees, company_tasks, y, score, story_points, max_employee_workload
+    )
+    mu_Z_2, assessment_score_2 = s6_objective2(
+        model, employees, company_tasks, x, score, story_points, max_employee_workload
+    )
+    mu_Z_3, assessment_score_3 = s7_objective3(
+        model,
+        employees,
+        company_tasks,
+        score,
+        story_points,
+        max_employee_workload,
+        max_workload,
+    )
+    s8_MOO_1(
+        model,
+        employees,
+        company_tasks,
+        score,
+        story_points,
+        max_employee_workload,
+        mu_Z_1,
+        mu_Z_2,
+        mu_Z_3,
+        assessment_score_1,
+        assessment_score_2,
+        assessment_score_3,
+    )
 
 
 if __name__ == "__main__":
