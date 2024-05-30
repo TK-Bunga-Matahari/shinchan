@@ -19,8 +19,13 @@ import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
 
+# Mini Data
 EMPLOYEE_PATH = "./mini_data/mini_data - employee.csv"
 TASK_PATH = "./mini_data/mini_data - task.csv"
+
+# Data Fix
+# EMPLOYEE_PATH = "./data/fixed_data_employee.csv"
+# TASK_PATH = "./data/fixed_data_task.csv"
 
 
 def s1_data_structure_CA():
@@ -97,6 +102,7 @@ def s1_data_structure_CA():
         return employees, skills_name, tasks, story_points, company_tasks, score
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s1_data_structure_CA: {e}")
         print(f"An error occurred in s1_data_structure_CA: {e}")
         return [], [], [], {}, {}, {}
 
@@ -152,6 +158,7 @@ def s2_construct_model():
         return model
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s2_construct_model: {e}")
         print(f"An error occurred in s2_construct_model: {e}")
         return None
 
@@ -219,6 +226,7 @@ def s3_decision_variable(model, employees, company_tasks):
         return x, y, max_employee_workload, max_workload
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s3_decision_variable: {e}")
         print(f"An error occurred in s3_decision_variable: {e}")
         return {}, {}, 0, None
 
@@ -308,6 +316,7 @@ def s4_constraint(model, x, y, employees, company_tasks, story_points, max_workl
             )
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s4_constraint: {e}")
         print(f"An error occurred in s4_constraint: {e}")
 
 
@@ -420,6 +429,7 @@ def s5_objective1(
         return mu_Z_1, assessment_score_1
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s5_objective1: {e}")
         print(f"An error occurred in s5_objective1: {e}")
         return None, None
 
@@ -538,6 +548,7 @@ def s6_objective2(
         return mu_Z_2, assessment_score_2
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s6_objective2: {e}")
         print(f"An error occurred in s6_objective2: {e}")
         return None, None
 
@@ -653,6 +664,7 @@ def s7_objective3(
         return mu_Z_3, assessment_score_3
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s7_objective3: {e}")
         print(f"An error occurred in s7_objective3: {e}")
         return None, None
 
@@ -798,9 +810,9 @@ def s8_MOO_1(
         plt.xticks(rotation=15)
         plt.savefig("./output/compare_SO_MOO_1.png")
         plt.show()
-        plt.close()
 
     except Exception as e:
+        send_discord_notification(f"An error occured in s8_MOO_1: {e}")
         print(f"An error occurred in s8_MOO_1: {e}")
 
 
@@ -840,7 +852,7 @@ def main():
     ==============================================
     """
     print(header)
-    wait_for_y()
+    # wait_for_y()
 
     header_msg = (
         f"Task Assignment Optimization Problem: START with Competence Assessment"
@@ -915,6 +927,7 @@ def main():
             print(f"Section 5: Objective 1 Run Successfully\n\n")
             send_discord_notification("Section 5: Objective 1 Run Successfully")
         else:
+            send_discord_notification("Objective 1 failed.")
             raise Exception("Objective 1 failed.")
 
         # Section 6
@@ -931,6 +944,7 @@ def main():
             print(f"Section 6: Objective 2 Run Successfully\n\n")
             send_discord_notification("Section 6: Objective 2 Run Successfully")
         else:
+            send_discord_notification("Objective 2 failed.")
             raise Exception("Objective 2 failed.")
 
         # Section 7
@@ -947,6 +961,7 @@ def main():
             print(f"Section 7: Objective 3 Run Successfully\n\n")
             send_discord_notification("Section 7: Objective 3 Run Successfully")
         else:
+            send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
 
         # Section 8
@@ -968,6 +983,7 @@ def main():
         send_discord_notification("Section 8: MOO Method 1 Run Successfully")
 
     except Exception as e:
+        send_discord_notification(f"An error occurred: {e}")
         print(f"An error occurred: {e}")
 
 
