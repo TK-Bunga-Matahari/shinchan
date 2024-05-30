@@ -19,13 +19,16 @@ import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
 
-# Mini Data
-EMPLOYEE_PATH = "./mini_data/mini_data - employee.csv"
-TASK_PATH = "./mini_data/mini_data - task.csv"
+full = False
 
-# Data Fix
-# EMPLOYEE_PATH = "./data/fixed_data_employee.csv"
-# TASK_PATH = "./data/fixed_data_task.csv"
+if full:
+    # Data Fix
+    EMPLOYEE_PATH = "./data/fixed_data_employee.csv"
+    TASK_PATH = "./data/fixed_data_task.csv"
+else:
+    # Mini Data
+    EMPLOYEE_PATH = "./mini_data/mini_data - employee.csv"
+    TASK_PATH = "./mini_data/mini_data - task.csv"
 
 
 def s1_data_structure_CA():
@@ -200,7 +203,10 @@ def s3_decision_variable(model, employees, company_tasks):
     """
 
     try:
-        max_employee_workload = 10
+        if full:
+            max_employee_workload = 20
+        else:
+            max_employee_workload = 8
 
         # Create decision variables for x and y
         x = {}
