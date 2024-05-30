@@ -815,6 +815,8 @@ def main():
         max_employee_workload,
         max_workload,
     )
+    print()
+    print(f"Section 7: Objective 3 Run Successfully\n\n")
 
     # Section 8
     s8_MOO_1(
@@ -831,6 +833,8 @@ def main():
         assessment_score_2,
         assessment_score_3,
     )
+    print()
+    print(f"Section 8: MOO Method 1 Run Successfully\n\n")
 
 
 if __name__ == "__main__":
