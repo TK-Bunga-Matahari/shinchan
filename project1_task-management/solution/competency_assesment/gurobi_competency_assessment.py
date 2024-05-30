@@ -9,7 +9,6 @@ _by: TK-Bunga Matahari Team_
 """
 
 # Import library
-import csv
 import numpy as np
 import pandas as pd
 import gurobipy as gp
@@ -17,31 +16,16 @@ import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
 
-
-def export_dict_to_csv(data_dict, file_path):
-    # Ensure the dictionary is not empty
-    if not data_dict:
-        raise ValueError("The dictionary is empty")
-
-    # Open a CSV file for writing
-    with open(file_path, mode="w", newline="") as file:
-        # Create a CSV writer object
-        writer = csv.DictWriter(file, fieldnames=list(data_dict[0].keys()))
-
-        # Write the header
-        writer.writeheader()
-
-        # Write the data
-        for row in data_dict:
-            writer.writerow(row)
+EMPLOYEE_PATH = "./mini_data/mini_data - employee.csv"
+TASK_PATH = "./mini_data/mini_data - task.csv"
 
 
-def s1_data_structure():
+def s1_data_structure_CA():
     """# 1. Define the Data Structure"""
 
     # Run this if the data in Local/Repository
-    new_employee_path = "./mini_data/mini_data - employee.csv"
-    new_task_path = "./mini_data/mini_data - task.csv"
+    new_employee_path = EMPLOYEE_PATH
+    new_task_path = TASK_PATH
 
     """## 1.1. Pre-Processing: Employee Data"""
 
@@ -741,7 +725,7 @@ def main():
 
     # Section 1
     employees, skills_name, tasks, story_points, company_tasks, score = (
-        s1_data_structure()
+        s1_data_structure_CA()
     )
 
     print(f"Section 1: Data Structure Run Successfully")
