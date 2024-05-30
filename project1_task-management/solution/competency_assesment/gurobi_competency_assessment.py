@@ -88,7 +88,7 @@ def s1_data_structure_CA():
     score_df = pd.DataFrame.from_dict(score, orient="index")
 
     # Export the score dictionary to CSV
-    score_df.to_csv("./output/score/score.csv")
+    score_df.to_csv("./output/score.csv")
 
     return employees, skills_name, tasks, story_points, company_tasks, score
 
@@ -344,6 +344,7 @@ def s5_objective1(
         columns=["company", "assigned_task", "sum_sp", "wasted_sp", "assessment_score"],
     )
     result_1.index.name = "employee"
+    result_1.to_csv("./output/result_1.csv")
 
     """### 5.3.1 Statistics of The Objective"""
 
@@ -375,6 +376,7 @@ def s5_objective1(
     assessment_score_1 = result_1["assessment_score"].explode().reset_index(drop=True)
     assessment_score_1.plot(kind="box")
     plt.title("Assessment Score Boxplot of Objective 1")
+    plt.savefig("./output/objective_1.png")
     plt.show()
 
     return mu_Z_1, assessment_score_1
@@ -755,9 +757,9 @@ def main():
     """
 
     # Section 5
-    # mu_Z_1, assessment_score_1 = s5_objective1(
-    #     model, employees, company_tasks, y, score, story_points, max_employee_workload
-    # )
+    mu_Z_1, assessment_score_1 = s5_objective1(
+        model, employees, company_tasks, y, score, story_points, max_employee_workload
+    )
 
     # Section 6
     # mu_Z_2, assessment_score_2 = s6_objective2(
