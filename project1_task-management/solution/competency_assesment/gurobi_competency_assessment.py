@@ -15,7 +15,6 @@ import threading
 import numpy as np
 import pandas as pd
 import gurobipy as gp
-import multiprocessing as mp
 import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
@@ -158,6 +157,12 @@ def s2_construct_model():
 
         # Create the model within the Gurobi environment
         model = gp.Model(name="task_assignment", env=env)
+
+        # Set Gurobi parameters to improve performance
+        model.setParam("MIPGap", 0.01)  # 1% optimality gap
+        model.setParam("Presolve", 2)  # Aggressive presolve
+        model.setParam("Heuristics", 0.5)  # Increase heuristics effort
+        # model.setParam("Threads", 8)  # Use 8 threads, adjust based on your CPU
 
         return model
 
@@ -328,7 +333,14 @@ def s4_constraint(model, x, y, employees, company_tasks, story_points, max_workl
 
 
 def s5_objective1(
-    model, employees, company_tasks, y, score, story_points, max_employee_workload
+    model,
+    employees,
+    company_tasks,
+    y,
+    score,
+    story_points,
+    max_employee_workload,
+    mu_Z_star,
 ):
     """# 5. Single Objective Approach: 1) Minimize The Idle Employee
     ## 5.1. Set The Objective Model
@@ -361,6 +373,7 @@ def s5_objective1(
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
             print(f"Obj. Value 1 i.e. Total Idle Employees: {model.ObjVal}\n")
+            mu_Z_star[1] = model.ObjVal
 
             x_hat_1 = {}
             for j in employees:
@@ -428,21 +441,31 @@ def s5_objective1(
         assessment_score_1 = (
             result_1["assessment_score"].explode().reset_index(drop=True)
         )
-        assessment_score_1.plot(kind="box")
-        plt.title("Assessment Score Boxplot of Objective 1")
-        plt.savefig("./output_CA/objective_1.png")
-        plt.show()
 
-        return mu_Z_1, assessment_score_1
+        if len(assessment_score_1) != 0:
+            assessment_score_1.plot(kind="box")
+            plt.title("Assessment Score Boxplot of Objective 1")
+            plt.show()
+        else:
+            print("No data to show")
+
+        return mu_Z_1, mu_Z_star, assessment_score_1
 
     except Exception as e:
         send_discord_notification(f"An error occured in s5_objective1: {e}")
         print(f"An error occurred in s5_objective1: {e}")
-        return None, None
+        return None, None, None
 
 
 def s6_objective2(
-    model, employees, company_tasks, x, score, story_points, max_employee_workload
+    model,
+    employees,
+    company_tasks,
+    x,
+    score,
+    story_points,
+    max_employee_workload,
+    mu_Z_star,
 ):
     """# 6. Single Objective Approach: 2) Maximize The Assessment Score
     ## 6.1. Set The Objective Model
@@ -454,17 +477,12 @@ def s6_objective2(
 
     try:
         # objective 2
-        assessment_score = []
-        assessment_score.append(
-            quicksum(
-                score[j][i] * x[i, j, k]
-                for k, tasks in company_tasks.items()
-                for j in employees
-                for i in tasks
-            )
+        mu_Z_2 = quicksum(
+            score[j][i] * x[i, j, k]
+            for k, tasks in company_tasks.items()
+            for i in tasks
+            for j in employees
         )
-
-        mu_Z_2 = quicksum(assessment_score)
 
         # single objective 2
         model.setObjective(mu_Z_2, GRB.MAXIMIZE)
@@ -480,6 +498,7 @@ def s6_objective2(
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
             print(f"Obj. Value 2 i.e. Total Score: {model.ObjVal}\n")
+            mu_Z_star[2] = model.ObjVal
 
             x_hat_2 = {}
             for j in employees:
@@ -547,17 +566,20 @@ def s6_objective2(
         assessment_score_2 = (
             result_2["assessment_score"].explode().reset_index(drop=True)
         )
-        assessment_score_2.plot(kind="box")
-        plt.title("Assessment Score Boxplot of Objective 2")
-        plt.savefig("./output_CA/objective_2.png")
-        plt.show()
 
-        return mu_Z_2, assessment_score_2
+        if len(assessment_score_2) != 0:
+            assessment_score_2.plot(kind="box")
+            plt.title("Assessment Score Boxplot of Objective 2")
+            plt.show()
+        else:
+            print("No data to show")
+
+        return mu_Z_2, mu_Z_star, assessment_score_2
 
     except Exception as e:
         send_discord_notification(f"An error occured in s6_objective2: {e}")
         print(f"An error occurred in s6_objective2: {e}")
-        return None, None
+        return None, None, None
 
 
 def s7_objective3(
@@ -568,6 +590,7 @@ def s7_objective3(
     story_points,
     max_employee_workload,
     max_workload,
+    mu_Z_star,
 ):
     """# 7. Single Objective Approach: 3) Balancing Workload For Each Employee
     ## 7.1. Set The Objective Model
@@ -595,6 +618,7 @@ def s7_objective3(
             print(
                 f"Obj. Value 3 i.e. Maximum Story Points Each Employee: {model.ObjVal}\n"
             )
+            mu_Z_star[3] = model.ObjVal
 
             x_hat_3 = {}
             for j in employees:
@@ -663,17 +687,20 @@ def s7_objective3(
         assessment_score_3 = (
             result_3["assessment_score"].explode().reset_index(drop=True)
         )
-        assessment_score_3.plot(kind="box")
-        plt.title("Assessment Score Boxplot of Objective 3")
-        plt.savefig("./output_CA/objective_3.png")
-        plt.show()
 
-        return mu_Z_3, assessment_score_3
+        if len(assessment_score_3) != 0:
+            assessment_score_3.plot(kind="box")
+            plt.title("Assessment Score Boxplot of Objective 3")
+            plt.show()
+        else:
+            print("No data to show")
+
+        return mu_Z_3, mu_Z_star, assessment_score_3
 
     except Exception as e:
         send_discord_notification(f"An error occured in s7_objective3: {e}")
         print(f"An error occurred in s7_objective3: {e}")
-        return None, None
+        return None, None, None
 
 
 def s8_MOO_1(
@@ -699,9 +726,9 @@ def s8_MOO_1(
     """
 
     try:
-        alpha = 0.1
-        beta = 0.8
-        gamma = 0.1
+        alpha = 0.03
+        beta = 0.9
+        gamma = 0.07
 
         # MOO method 1
         mu_Z_4 = (alpha * mu_Z_1) + (beta * mu_Z_2) + (gamma * mu_Z_3)
@@ -786,10 +813,13 @@ def s8_MOO_1(
         assessment_score_4 = (
             result_4["assessment_score"].explode().reset_index(drop=True)
         )
-        assessment_score_4.plot(kind="box")
-        plt.title("Assessment Score Boxplot of MOO Method 1")
-        plt.savefig("./output_CA/MOO_1.png")
-        plt.show()
+
+        if len(assessment_score_4) != 0:
+            assessment_score_4.plot(kind="box")
+            plt.title("Assessment Score Boxplot of MOO Method 1")
+            plt.show()
+        else:
+            print("No data to show")
 
         """## 8.4 Comparing MOO Method 3 to Single Objective"""
 
@@ -818,9 +848,207 @@ def s8_MOO_1(
         plt.savefig("./output_CA/compare_SO_MOO_1.png")
         plt.show()
 
+        return assessment_score_4
+
     except Exception as e:
         send_discord_notification(f"An error occured in s8_MOO_1: {e}")
         print(f"An error occurred in s8_MOO_1: {e}")
+
+
+def s9_MOO_2(
+    model,
+    employees,
+    company_tasks,
+    score,
+    story_points,
+    max_employee_workload,
+    mu_Z_1,
+    mu_Z_2,
+    mu_Z_3,
+    mu_Z_star,
+    assessment_score_1,
+    assessment_score_2,
+    assessment_score_3,
+    assessment_score_4,
+):
+    """# 9. Multi-Objective Approach: 2) Goal Programming Optimization Method
+    ## 9.1. Set The Objective Model
+
+    $$
+    D = \\sum_{k=1}^{3} \\left( W_{plus_k} \\cdot d_{plus_k} + W_{minus_k} \\cdot d_{minus_k} \\right) / \\mu_{Z_star_k}
+    $$
+    """
+
+    try:
+        # Define weight dictionary for each objective
+        Weight = {
+            1: 0,
+            2: 1,
+            3: 1,
+        }
+
+        # Define the deviation plus and minus variables
+        d_plus = {}
+        d_minus = {}
+
+        # Add variables for d_plus and d_minus with specific conditions
+        for i in range(1, 4):
+            if i != 3:
+                d_plus[i] = model.addVar(vtype=GRB.CONTINUOUS, lb=0, name=f"d_plus_{i}")
+            if i != 1:
+                d_minus[i] = model.addVar(
+                    vtype=GRB.CONTINUOUS, lb=0, name=f"d_minus_{i}"
+                )
+
+        # Set specific variables to zero
+        d_minus[1] = 0
+        d_plus[3] = 0
+
+        mu_Z = {1: mu_Z_1, 2: mu_Z_2, 3: mu_Z_3}
+
+        mu_Z_star_obj = mu_Z_star.copy()
+        for i, value in mu_Z_star_obj.items():
+            mu_Z_star_obj[i] = 1 / value if value != 0 else 0
+
+        # This constraint is bound for each objective connected with each other
+        for k, w in Weight.items():
+            if w != 0:
+                model.addConstr(mu_Z[k] - d_plus[k] + d_minus[k] == mu_Z_star[k])
+
+        # Define D = sum k=1 to 3 ((W_plus_k * d_plus_k) + (W_minus_k * d_minus_k)) / mu_Z_star iterate
+        D = quicksum(
+            (
+                (Weight[i] * (d_plus[i] + d_minus[i])) * mu_Z_star_obj[i]
+                for i in range(1, 4)
+            )
+        )
+
+        # Minimize D
+        model.setObjective(D, GRB.MINIMIZE)
+
+        ## 9.2. Solve The Model
+
+        # Solve the model
+        model.optimize()
+
+        ## 9.3. Print The Solver Results
+
+        # Check and process the solution
+        if model.status == GRB.OPTIMAL:
+            print("Solution Found!")
+            print(f"Obj. Value 5 i.e. Deviation: {model.ObjVal}\n")
+
+            x_hat_5 = {}
+            for j in employees:
+                result = get_employee_tasks(
+                    j, company_tasks, model, score, story_points, max_employee_workload
+                )
+                if len(result[1]) > 0:
+                    x_hat_5[j] = result
+        else:
+            print("No Solution Found!")
+            x_hat_5 = {}
+
+        ## 9.4. Show the Solver's Result
+
+        # Set display options
+        pd.set_option("display.max_rows", 500)
+        pd.set_option("display.max_columns", 500)
+
+        # Show data that has positive metrics score
+        result_5 = pd.DataFrame.from_dict(
+            x_hat_5,
+            orient="index",
+            columns=[
+                "company",
+                "assigned_task",
+                "sum_sp",
+                "wasted_sp",
+                "assessment_score",
+            ],
+        )
+
+        result_5.index.name = "employee"
+        result_5.to_csv("./output_CA/result_5_MOO_2.csv")
+
+        ## 9.5. Statistics of The Objective
+
+        total_employee = len(employees)
+        total_sp = sum(story_points.values())
+        total_active_employee = len(set(employee for employee in x_hat_5.keys()))
+        total_active_sp = sum(value[2] for value in x_hat_5.values())
+        total_idle_employee = total_employee - total_active_employee
+        total_wasted_sp = total_sp - total_active_sp
+
+        print(f"Total Employee\t\t\t: {total_employee}")
+        print(
+            f"Total Active Employee\t\t: {total_active_employee}\t{(total_active_employee/total_employee)*100:.2f}%"
+        )
+        print(
+            f"Total Idle Employee\t\t: {total_idle_employee}\t{(total_idle_employee/total_employee)*100:.2f}%\n"
+        )
+        print(f"Total Story Points\t\t: {total_sp}")
+        print(
+            f"Total Active Story Points\t: {total_active_sp}\t{(total_active_sp/total_sp)*100:.2f}%"
+        )
+        print(
+            f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
+        )
+
+        ## 9.6. Distribution With Respect to the Assessment Score
+
+        # Timer for auto close plot
+        timer = threading.Timer(3, close_plot)
+        timer.start()
+
+        # Make boxplot for x_hat_5
+        assessment_score_5 = (
+            result_5["assessment_score"].explode().reset_index(drop=True)
+        )
+
+        if len(assessment_score_5) != 0:
+            assessment_score_5.plot(kind="box")
+            plt.title("Assessment Score Boxplot of MOO Method 2")
+            plt.show()
+        else:
+            print("No data to show")
+
+        ## 9.7. Comparing MOO Method 2 to Single Objective and MOO Method 1
+
+        # Timer for auto close plot
+        timer = threading.Timer(3, close_plot)
+        timer.start()
+
+        # Merge all boxplot in one graph
+        data = [
+            assessment_score_1,
+            assessment_score_2,
+            assessment_score_3,
+            assessment_score_4,
+            assessment_score_5,
+        ]
+
+        plt.figure(figsize=(15, 8))
+        plt.boxplot(
+            data,
+            labels=[
+                "Objective 1\nMin Idle Employee",
+                "Objective 2\nMax Assessment Score",
+                "Objective 3\nBalancing the Workload",
+                "MOO Method 1\nWeighted Sum Method",
+                "MOO Method 2\nGoal Programming",
+            ],
+        )
+        plt.title("Overall Assessment Score Boxplot")
+        plt.xticks(rotation=15)
+        plt.savefig("./output_CA/compare_SO_MOO_2.png")
+        plt.show()
+
+        return assessment_score_5
+
+    except Exception as e:
+        send_discord_notification(f"An error occured in s9_MOO_2: {e}")
+        print(f"An error occurred in s9_MOO_2: {e}")
 
 
 def wait_for_y():
@@ -920,8 +1148,10 @@ def main():
         =============================================
         """
 
+        mu_Z_star = {i: 0.00 for i in range(1, 4)}
+
         # Section 5
-        mu_Z_1, assessment_score_1 = s5_objective1(
+        mu_Z_1, mu_Z_star, assessment_score_1 = s5_objective1(
             model,
             employees,
             company_tasks,
@@ -929,6 +1159,7 @@ def main():
             score,
             story_points,
             max_employee_workload,
+            mu_Z_star,
         )
         if mu_Z_1 and assessment_score_1 is not None:
             print(f"Section 5: Objective 1 Run Successfully\n\n")
@@ -937,25 +1168,8 @@ def main():
             send_discord_notification("Objective 1 failed.")
             raise Exception("Objective 1 failed.")
 
-        # Section 6
-        mu_Z_2, assessment_score_2 = s6_objective2(
-            model,
-            employees,
-            company_tasks,
-            x,
-            score,
-            story_points,
-            max_employee_workload,
-        )
-        if mu_Z_2 and assessment_score_2 is not None:
-            print(f"Section 6: Objective 2 Run Successfully\n\n")
-            send_discord_notification("Section 6: Objective 2 Run Successfully")
-        else:
-            send_discord_notification("Objective 2 failed.")
-            raise Exception("Objective 2 failed.")
-
         # Section 7
-        mu_Z_3, assessment_score_3 = s7_objective3(
+        mu_Z_3, mu_Z_star, assessment_score_3 = s7_objective3(
             model,
             employees,
             company_tasks,
@@ -963,6 +1177,7 @@ def main():
             story_points,
             max_employee_workload,
             max_workload,
+            mu_Z_star,
         )
         if mu_Z_3 and assessment_score_3 is not None:
             print(f"Section 7: Objective 3 Run Successfully\n\n")
@@ -971,8 +1186,26 @@ def main():
             send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
 
+        # Section 6
+        mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(
+            model,
+            employees,
+            company_tasks,
+            x,
+            score,
+            story_points,
+            max_employee_workload,
+            mu_Z_star,
+        )
+        if mu_Z_2 and assessment_score_2 is not None:
+            print(f"Section 6: Objective 2 Run Successfully\n\n")
+            send_discord_notification("Section 6: Objective 2 Run Successfully")
+        else:
+            send_discord_notification("Objective 2 failed.")
+            raise Exception("Objective 2 failed.")
+
         # Section 8
-        s8_MOO_1(
+        assessment_score_4 = s8_MOO_1(
             model,
             employees,
             company_tasks,
@@ -986,8 +1219,36 @@ def main():
             assessment_score_2,
             assessment_score_3,
         )
-        print(f"Section 8: MOO Method 1 Run Successfully\n\n")
-        send_discord_notification("Section 8: MOO Method 1 Run Successfully")
+        if assessment_score_4 is not None:
+            print(f"Section 8: MOO Method 1 Run Successfully\n\n")
+            send_discord_notification("Section 8: MOO Method 1 Run Successfully")
+        else:
+            send_discord_notification("MOO Method 1 failed.")
+            raise Exception("MOO Method 1 failed.")
+
+        # Section 9
+        assessment_score_5 = s9_MOO_2(
+            model,
+            employees,
+            company_tasks,
+            score,
+            story_points,
+            max_employee_workload,
+            mu_Z_1,
+            mu_Z_2,
+            mu_Z_3,
+            mu_Z_star,
+            assessment_score_1,
+            assessment_score_2,
+            assessment_score_3,
+            assessment_score_4,
+        )
+        if assessment_score_5 is not None:
+            print(f"Section 9: MOO Method 2 Run Successfully\n\n")
+            send_discord_notification("Section 9: MOO Method 2 Run Successfully")
+        else:
+            send_discord_notification("MOO Method 2 failed.")
+            raise Exception("MOO Method 2 failed.")
 
     except Exception as e:
         send_discord_notification(f"An error occurred: {e}")
