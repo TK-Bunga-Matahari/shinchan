@@ -15,6 +15,7 @@ import threading
 import numpy as np
 import pandas as pd
 import gurobipy as gp
+import multiprocessing as mp
 import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
@@ -100,7 +101,7 @@ def s1_data_structure_CA():
         score_df = pd.DataFrame.from_dict(score, orient="index")
 
         # Export the score dictionary to CSV
-        score_df.to_csv("./output/score.csv")
+        score_df.to_csv("./output_CA/score.csv")
 
         return employees, skills_name, tasks, story_points, company_tasks, score
 
@@ -391,7 +392,7 @@ def s5_objective1(
             ],
         )
         result_1.index.name = "employee"
-        result_1.to_csv("./output/result_1.csv")
+        result_1.to_csv("./output_CA/result_1.csv")
 
         """### 5.3.1 Statistics of The Objective"""
 
@@ -429,7 +430,7 @@ def s5_objective1(
         )
         assessment_score_1.plot(kind="box")
         plt.title("Assessment Score Boxplot of Objective 1")
-        plt.savefig("./output/objective_1.png")
+        plt.savefig("./output_CA/objective_1.png")
         plt.show()
 
         return mu_Z_1, assessment_score_1
@@ -510,7 +511,7 @@ def s6_objective2(
             ],
         )
         result_2.index.name = "employee"
-        result_2.to_csv("./output/result_2.csv")
+        result_2.to_csv("./output_CA/result_2.csv")
 
         """### 6.3.1 Statistics of The Objective"""
 
@@ -548,7 +549,7 @@ def s6_objective2(
         )
         assessment_score_2.plot(kind="box")
         plt.title("Assessment Score Boxplot of Objective 2")
-        plt.savefig("./output/objective_2.png")
+        plt.savefig("./output_CA/objective_2.png")
         plt.show()
 
         return mu_Z_2, assessment_score_2
@@ -626,7 +627,7 @@ def s7_objective3(
         )
         result_3.index.name = "employee"
 
-        result_3.to_csv("./output/result_3.csv")
+        result_3.to_csv("./output_CA/result_3.csv")
 
         """### 7.3.1 Statistics of The Objective"""
 
@@ -664,7 +665,7 @@ def s7_objective3(
         )
         assessment_score_3.plot(kind="box")
         plt.title("Assessment Score Boxplot of Objective 3")
-        plt.savefig("./output/objective_3.png")
+        plt.savefig("./output_CA/objective_3.png")
         plt.show()
 
         return mu_Z_3, assessment_score_3
@@ -749,7 +750,7 @@ def s8_MOO_1(
         )
         result_4.index.name = "employee"
 
-        result_4.to_csv("./output/result_4_MOO_1.csv")
+        result_4.to_csv("./output_CA/result_4_MOO_1.csv")
 
         """### 8.3.1 Statistics of The Objective"""
 
@@ -787,7 +788,7 @@ def s8_MOO_1(
         )
         assessment_score_4.plot(kind="box")
         plt.title("Assessment Score Boxplot of MOO Method 1")
-        plt.savefig("./output/MOO_1.png")
+        plt.savefig("./output_CA/MOO_1.png")
         plt.show()
 
         """## 8.4 Comparing MOO Method 3 to Single Objective"""
@@ -814,7 +815,7 @@ def s8_MOO_1(
         )
         plt.title("Overall Assessment Score Boxplot")
         plt.xticks(rotation=15)
-        plt.savefig("./output/compare_SO_MOO_1.png")
+        plt.savefig("./output_CA/compare_SO_MOO_1.png")
         plt.show()
 
     except Exception as e:
@@ -880,7 +881,7 @@ def main():
         )
 
         section_1_msg_1 = f"Section 1: Data Structure Run Successfully"
-        section_1_msg_2 = f"score.csv has been saved in the output/score folder.\n\n"
+        section_1_msg_2 = f"score.csv has been saved in the output_CA/score folder.\n\n"
         print(section_1_msg_1)
         print(section_1_msg_2)
         send_discord_notification(section_1_msg_1)
