@@ -11,6 +11,7 @@ _by: TK-Bunga Matahari Team_
 # Import library
 import json
 import requests
+import datetime
 import threading
 import numpy as np
 import pandas as pd
@@ -1065,9 +1066,13 @@ def close_plot():
     plt.close()
 
 
+def get_timestamp():
+    return datetime.datetime.now().strftime("(%H.%M %d/%m/%Y)")
+
+
 def send_discord_notification(message):
     url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
-    data = {"content": message}
+    data = {"content": f"{get_timestamp()} {message}"}
     response = requests.post(
         url, data=json.dumps(data), headers={"Content-Type": "application/json"}
     )
@@ -1151,6 +1156,8 @@ def main():
         mu_Z_star = {i: 0.00 for i in range(1, 4)}
 
         # Section 5
+        send_discord_notification("Section 5: Objective 1 START")
+        start_time = datetime.datetime.now()
         mu_Z_1, mu_Z_star, assessment_score_1 = s5_objective1(
             model,
             employees,
@@ -1161,14 +1168,21 @@ def main():
             max_employee_workload,
             mu_Z_star,
         )
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).seconds
+
         if mu_Z_1 and assessment_score_1 is not None:
             print(f"Section 5: Objective 1 Run Successfully\n\n")
-            send_discord_notification("Section 5: Objective 1 Run Successfully")
+            send_discord_notification(
+                f"Section 5: Objective 1 Run Successfully with {duration} seconds"
+            )
         else:
             send_discord_notification("Objective 1 failed.")
             raise Exception("Objective 1 failed.")
 
         # Section 7
+        send_discord_notification("Section 7: Objective 3 START")
+        start_time = datetime.datetime.now()
         mu_Z_3, mu_Z_star, assessment_score_3 = s7_objective3(
             model,
             employees,
@@ -1179,14 +1193,21 @@ def main():
             max_workload,
             mu_Z_star,
         )
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).seconds
+
         if mu_Z_3 and assessment_score_3 is not None:
+            send_discord_notification(
+                f"Section 7: Objective 3 Run Successfully with {duration} seconds"
+            )
             print(f"Section 7: Objective 3 Run Successfully\n\n")
-            send_discord_notification("Section 7: Objective 3 Run Successfully")
         else:
             send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
 
         # Section 6
+        send_discord_notification("Section 6: Objective 2 START")
+        start_time = datetime.datetime.now()
         mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(
             model,
             employees,
@@ -1197,14 +1218,21 @@ def main():
             max_employee_workload,
             mu_Z_star,
         )
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).seconds
+
         if mu_Z_2 and assessment_score_2 is not None:
+            send_discord_notification(
+                f"Section 6: Objective 2 Run Successfully with {duration} seconds"
+            )
             print(f"Section 6: Objective 2 Run Successfully\n\n")
-            send_discord_notification("Section 6: Objective 2 Run Successfully")
         else:
             send_discord_notification("Objective 2 failed.")
             raise Exception("Objective 2 failed.")
 
         # Section 8
+        send_discord_notification("Section 8: MOO Method 1 START")
+        start_time = datetime.datetime.now()
         assessment_score_4 = s8_MOO_1(
             model,
             employees,
@@ -1219,14 +1247,21 @@ def main():
             assessment_score_2,
             assessment_score_3,
         )
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).seconds
+
         if assessment_score_4 is not None:
+            send_discord_notification(
+                f"Section 8: MOO Method 1 Run Successfully with {duration} seconds"
+            )
             print(f"Section 8: MOO Method 1 Run Successfully\n\n")
-            send_discord_notification("Section 8: MOO Method 1 Run Successfully")
         else:
             send_discord_notification("MOO Method 1 failed.")
             raise Exception("MOO Method 1 failed.")
 
         # Section 9
+        send_discord_notification("Section 9: MOO Method 2 START")
+        start_time = datetime.datetime.now()
         assessment_score_5 = s9_MOO_2(
             model,
             employees,
@@ -1243,9 +1278,13 @@ def main():
             assessment_score_3,
             assessment_score_4,
         )
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).seconds
         if assessment_score_5 is not None:
+            send_discord_notification(
+                f"Section 9: MOO Method 2 Run Successfully with {duration} seconds"
+            )
             print(f"Section 9: MOO Method 2 Run Successfully\n\n")
-            send_discord_notification("Section 9: MOO Method 2 Run Successfully")
         else:
             send_discord_notification("MOO Method 2 failed.")
             raise Exception("MOO Method 2 failed.")
