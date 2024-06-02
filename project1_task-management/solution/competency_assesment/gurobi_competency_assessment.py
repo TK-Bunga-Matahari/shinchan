@@ -160,9 +160,10 @@ def s2_construct_model():
         model = gp.Model(name="task_assignment", env=env)
 
         # Set Gurobi parameters to improve performance
-        model.setParam("MIPGap", 0.01)  # 1% optimality gap
         model.setParam("Presolve", 2)  # Aggressive presolve
-        model.setParam("Heuristics", 0.5)  # Increase heuristics effort
+        model.setParam("MIPFocus", 1)  # Focus on improving the best bound
+        model.setParam("MIPGap", 0.01)  # 1% optimality gap
+        model.setParam("Heuristics", 0.1)  # Increase heuristics effort
         # model.setParam("Threads", 8)  # Use 8 threads, adjust based on your CPU
 
         return model
