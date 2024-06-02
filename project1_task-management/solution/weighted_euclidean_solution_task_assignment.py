@@ -7,6 +7,7 @@ import requests
 import json
 import threading
 
+
 # Discord notification function
 def send_discord_notification(message):
     url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
@@ -521,6 +522,20 @@ def moo_rm_obj3_optimization():
 # Stage 10: Data Visualization
 def data_visualization():
     try:
+        # Normalization function for similarity score
+        def normalize_assessment_scores(assessment_scores_df, min_score, max_score, weighted_euclidean=False):
+          normalized_scores_df = assessment_scores_df.copy()
+          for index, score in enumerate(normalized_scores_df):
+            if weighted_euclidean == True:
+              normalized_scores_df[index] = 1 - ((score - min_score) / (max_score - min_score))
+            else:
+              normalized_scores_df[index] = (score - min_score) / (max_score - min_score)
+
+          return normalized_scores_df
+        
+        worst_score = 40.311288741492746
+        best_score = 0
+        
         # Calculate idle employees
         total_employee = len(employees)
         total_sp = sum(story_points.values())
@@ -581,6 +596,15 @@ def data_visualization():
         similarity_score_rm_obj1 = result_rm_obj1['similarity_score'].explode().reset_index(drop=True)
         similarity_score_rm_obj2 = result_rm_obj2['similarity_score'].explode().reset_index(drop=True)
         similarity_score_rm_obj3 = result_rm_obj3['similarity_score'].explode().reset_index(drop=True)
+
+        ## normalize values
+        similarity_score1 = normalize_assessment_scores(similarity_score1, worst_score, best_score, weighted_euclidean=True)
+        similarity_score2 = normalize_assessment_scores(similarity_score2, worst_score, best_score, weighted_euclidean=True)
+        similarity_score3 = normalize_assessment_scores(similarity_score3, worst_score, best_score, weighted_euclidean=True)
+        similarity_score_rm_obj1 = normalize_assessment_scores(similarity_score_rm_obj1, worst_score, best_score, weighted_euclidean=True)
+        similarity_score_rm_obj2 = normalize_assessment_scores(similarity_score_rm_obj2, worst_score, best_score, weighted_euclidean=True)
+        similarity_score_rm_obj3 = normalize_assessment_scores(similarity_score_rm_obj3, worst_score, best_score, weighted_euclidean=True)
+
 
         # timer for auto close plot
         timer = threading.Timer(3, close_plot)
