@@ -22,13 +22,20 @@ class CompetencyAssessment:
         required = {}
         weight = {}
 
+        # Store each column (competency) as a separate entry in the 'required' dictionary
         for i, val in self.rcd_df.items():
             required[i] = val
 
+        # Calculate the total required values for each task
         total_req = sum(required.values())
 
         for competency, val in required.items():
-            weight[competency] = val / total_req
+            weight[competency] = {}
+            for task, value in val.items():
+                if total_req[task] != 0:
+                    weight[competency][task] = value / total_req[task]
+                else:
+                    weight[competency][task] = 0
 
         return weight
 

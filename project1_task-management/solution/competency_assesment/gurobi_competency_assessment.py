@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
 
-full = False
+full = True
 
 if full:
     # Data Fix
@@ -163,8 +163,8 @@ def s2_construct_model():
         model.setParam("Presolve", 2)  # Aggressive presolve
         model.setParam("MIPFocus", 1)  # Focus on improving the best bound
         model.setParam("MIPGap", 0.01)  # 1% optimality gap
-        model.setParam("Heuristics", 0.1)  # Increase heuristics effort
-        # model.setParam("Threads", 8)  # Use 8 threads, adjust based on your CPU
+        model.setParam("Heuristics", 0.8)  # Increase heuristics effort
+        model.setParam("Threads", 16)  # Use 8 threads, adjust based on your CPU
 
         return model
 
@@ -174,7 +174,7 @@ def s2_construct_model():
         return None
 
 
-def s3_decision_variable(model, employees, company_tasks):
+def s3_decision_variable(model, tasks, employees, company_tasks):
     """# 3. Build the Decision Variable
 
     We have 3 sets:
@@ -214,6 +214,7 @@ def s3_decision_variable(model, employees, company_tasks):
         if full:
             max_employee_workload = 20
         else:
+            # mini data
             max_employee_workload = 8
 
         # Create decision variables for x and y
@@ -229,6 +230,11 @@ def s3_decision_variable(model, employees, company_tasks):
             for k in company_tasks.keys():
                 y[(j, k)] = model.addVar(vtype=GRB.BINARY, name=f"y_{j}_{k}")
 
+        z = {}
+        for i in tasks:
+            for j in employees:
+                z[(i, j)] = model.addVar(vtype=GRB.BINARY, name=f"z_{i}_{j}")
+
         # Decision variable for max workload
         max_workload = model.addVar(
             vtype=GRB.INTEGER, lb=0, ub=max_employee_workload, name="max_workload"
@@ -237,15 +243,15 @@ def s3_decision_variable(model, employees, company_tasks):
         # Integrate new variables
         model.update()
 
-        return x, y, max_employee_workload, max_workload
+        return x, y, z, max_employee_workload, max_workload
 
     except Exception as e:
         send_discord_notification(f"An error occured in s3_decision_variable: {e}")
         print(f"An error occurred in s3_decision_variable: {e}")
-        return {}, {}, 0, None
+        return {}, {}, {}, 0, None
 
 
-def s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload):
+def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload):
     """# 4. Subject to the Constraint
 
     ## 4.1. Constraint 1: Each Task is Assigned to One Employee
@@ -328,6 +334,16 @@ def s4_constraint(model, x, y, employees, company_tasks, story_points, max_workl
                     for i in tasks
                 )
             )
+
+        # # create constraint 5: each task can only assigned to one employee
+        for i in tasks:
+            model.addConstr(quicksum(z[(i, j)] for j in employees) <= 1)
+
+        for k, tasks in company_tasks.items():
+            for i in tasks:
+                for j in employees:
+                    model.addGenConstrIndicator(x[i, j, k], True, z[i, j], GRB.EQUAL, 1)
+                    model.addGenConstrIndicator(z[i, j], True, y[j, k], GRB.EQUAL, 1)
 
     except Exception as e:
         send_discord_notification(f"An error occured in s4_constraint: {e}")
@@ -463,7 +479,7 @@ def s6_objective2(
     model,
     employees,
     company_tasks,
-    x,
+    z,
     score,
     story_points,
     max_employee_workload,
@@ -479,8 +495,16 @@ def s6_objective2(
 
     try:
         # objective 2
+        # mu_Z_2 = quicksum(
+        #     score[j][i] * x[i, j, k]
+        #     for k, tasks in company_tasks.items()
+        #     for i in tasks
+        #     for j in employees
+        # )
+
+        # proposed objective 2
         mu_Z_2 = quicksum(
-            score[j][i] * x[i, j, k]
+            score[j][i] * z[i, j]
             for k, tasks in company_tasks.items()
             for i in tasks
             for j in employees
@@ -728,9 +752,9 @@ def s8_MOO_1(
     """
 
     try:
-        alpha = 0.03
-        beta = 0.9
-        gamma = 0.07
+        alpha = 0
+        beta = 0.8
+        gamma = 0.2
 
         # MOO method 1
         mu_Z_4 = (alpha * mu_Z_1) + (beta * mu_Z_2) + (gamma * mu_Z_3)
@@ -871,7 +895,6 @@ def s9_MOO_2(
     assessment_score_1,
     assessment_score_2,
     assessment_score_3,
-    assessment_score_4,
 ):
     """# 9. Multi-Objective Approach: 2) Goal Programming Optimization Method
     ## 9.1. Set The Objective Model
@@ -884,9 +907,9 @@ def s9_MOO_2(
     try:
         # Define weight dictionary for each objective
         Weight = {
-            1: 0,
-            2: 1,
-            3: 1,
+            1: 0.05,
+            2: 0.85,
+            3: 0.1,
         }
 
         # Define the deviation plus and minus variables
@@ -929,9 +952,11 @@ def s9_MOO_2(
         model.setObjective(D, GRB.MINIMIZE)
 
         ## 9.2. Solve The Model
+        gap_callback = GapCallback()
+        model.setParam("MIPGap", 0.025)
 
         # Solve the model
-        model.optimize()
+        model.optimize(gap_callback)
 
         ## 9.3. Print The Solver Results
 
@@ -1026,18 +1051,16 @@ def s9_MOO_2(
             assessment_score_1,
             assessment_score_2,
             assessment_score_3,
-            assessment_score_4,
             assessment_score_5,
         ]
 
-        plt.figure(figsize=(15, 8))
+        plt.figure(figsize=(10, 5))
         plt.boxplot(
             data,
             labels=[
                 "Objective 1\nMin Idle Employee",
                 "Objective 2\nMax Assessment Score",
                 "Objective 3\nBalancing the Workload",
-                "MOO Method 1\nWeighted Sum Method",
                 "MOO Method 2\nGoal Programming",
             ],
         )
@@ -1051,6 +1074,41 @@ def s9_MOO_2(
     except Exception as e:
         send_discord_notification(f"An error occured in s9_MOO_2: {e}")
         print(f"An error occurred in s9_MOO_2: {e}")
+
+
+class GapCallback:
+    def __init__(self):
+        self.reported_gaps = set()
+
+    def __call__(self, model, where):
+        if where == GRB.Callback.MIP:
+            nodecount = model.cbGet(GRB.Callback.MIP_NODCNT)
+            if (
+                nodecount % 100 == 0
+            ):  # Adjust the frequency of the callback call if needed
+                obj_best = model.cbGet(GRB.Callback.MIP_OBJBST)
+                obj_bound = model.cbGet(GRB.Callback.MIP_OBJBND)
+                if obj_best < GRB.INFINITY and obj_bound > -GRB.INFINITY:
+                    gap = abs((obj_bound - obj_best) / obj_best) * 100
+                    percentage_gap = gap
+
+                    # Report gap for multiples of 5
+                    if percentage_gap > 10 and int(percentage_gap) % 5 == 0:
+                        if int(percentage_gap) not in self.reported_gaps:
+                            print(f"Model reached {int(percentage_gap)}% gap.")
+                            send_discord_notification(
+                                f"Model reached {int(percentage_gap)}% gap."
+                            )
+                            self.reported_gaps.add(int(percentage_gap))
+
+                    # Report gap for each integer when gap <= 10
+                    elif percentage_gap <= 10:
+                        if int(percentage_gap) not in self.reported_gaps:
+                            print(f"Model reached {int(percentage_gap)}% gap.")
+                            send_discord_notification(
+                                f"Model reached {int(percentage_gap)}% gap."
+                            )
+                            self.reported_gaps.add(int(percentage_gap))
 
 
 def wait_for_y():
@@ -1130,8 +1188,8 @@ def main():
             raise Exception("Model construction failed.")
 
         # Section 3
-        x, y, max_employee_workload, max_workload = s3_decision_variable(
-            model, employees, company_tasks
+        x, y, z, max_employee_workload, max_workload = s3_decision_variable(
+            model, tasks, employees, company_tasks
         )
         if x and y:
             print(f"Section 3: Build Decision Variable Run Successfully\n\n")
@@ -1142,7 +1200,9 @@ def main():
             raise Exception("Decision variable construction failed.")
 
         # Section 4
-        s4_constraint(model, x, y, employees, company_tasks, story_points, max_workload)
+        s4_constraint(
+            model, x, y, z, employees, company_tasks, story_points, max_workload
+        )
         print(f"Section 4: Set Constraint Run Successfully\n\n")
         send_discord_notification("Section 4: Set Constraint Run Successfully")
 
@@ -1181,6 +1241,31 @@ def main():
             send_discord_notification("Objective 1 failed.")
             raise Exception("Objective 1 failed.")
 
+        # Section 6
+        send_discord_notification("Section 6: Objective 2 START")
+        start_time = datetime.datetime.now()
+        mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(
+            model,
+            employees,
+            company_tasks,
+            z,
+            score,
+            story_points,
+            max_employee_workload,
+            mu_Z_star,
+        )
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).seconds
+
+        if mu_Z_2 and assessment_score_2 is not None:
+            send_discord_notification(
+                f"Section 6: Objective 2 Run Successfully with {duration} seconds"
+            )
+            print(f"Section 6: Objective 2 Run Successfully\n\n")
+        else:
+            send_discord_notification("Objective 2 failed.")
+            raise Exception("Objective 2 failed.")
+
         # Section 7
         send_discord_notification("Section 7: Objective 3 START")
         start_time = datetime.datetime.now()
@@ -1206,59 +1291,34 @@ def main():
             send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
 
-        # Section 6
-        send_discord_notification("Section 6: Objective 2 START")
-        start_time = datetime.datetime.now()
-        mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(
-            model,
-            employees,
-            company_tasks,
-            x,
-            score,
-            story_points,
-            max_employee_workload,
-            mu_Z_star,
-        )
-        end_time = datetime.datetime.now()
-        duration = (end_time - start_time).seconds
-
-        if mu_Z_2 and assessment_score_2 is not None:
-            send_discord_notification(
-                f"Section 6: Objective 2 Run Successfully with {duration} seconds"
-            )
-            print(f"Section 6: Objective 2 Run Successfully\n\n")
-        else:
-            send_discord_notification("Objective 2 failed.")
-            raise Exception("Objective 2 failed.")
-
         # Section 8
-        send_discord_notification("Section 8: MOO Method 1 START")
-        start_time = datetime.datetime.now()
-        assessment_score_4 = s8_MOO_1(
-            model,
-            employees,
-            company_tasks,
-            score,
-            story_points,
-            max_employee_workload,
-            mu_Z_1,
-            mu_Z_2,
-            mu_Z_3,
-            assessment_score_1,
-            assessment_score_2,
-            assessment_score_3,
-        )
-        end_time = datetime.datetime.now()
-        duration = (end_time - start_time).seconds
+        # send_discord_notification("Section 8: MOO Method 1 START")
+        # start_time = datetime.datetime.now()
+        # assessment_score_4 = s8_MOO_1(
+        #     model,
+        #     employees,
+        #     company_tasks,
+        #     score,
+        #     story_points,
+        #     max_employee_workload,
+        #     mu_Z_1,
+        #     mu_Z_2,
+        #     mu_Z_3,
+        #     assessment_score_1,
+        #     assessment_score_2,
+        #     assessment_score_3,
+        # )
+        # end_time = datetime.datetime.now()
+        # duration = (end_time - start_time).seconds
 
-        if assessment_score_4 is not None:
-            send_discord_notification(
-                f"Section 8: MOO Method 1 Run Successfully with {duration} seconds"
-            )
-            print(f"Section 8: MOO Method 1 Run Successfully\n\n")
-        else:
-            send_discord_notification("MOO Method 1 failed.")
-            raise Exception("MOO Method 1 failed.")
+        # if assessment_score_4 is not None:
+        #     send_discord_notification(
+        #         f"Section 8: MOO Method 1 Run Successfully with {duration} seconds"
+        #     )
+        #     print(f"Section 8: MOO Method 1 Run Successfully\n\n")
+        # else:
+        #     send_discord_notification("MOO Method 1 failed.")
+        #     raise Exception("MOO Method 1 failed.")
 
         # Section 9
         send_discord_notification("Section 9: MOO Method 2 START")
@@ -1277,7 +1337,6 @@ def main():
             assessment_score_1,
             assessment_score_2,
             assessment_score_3,
-            assessment_score_4,
         )
         end_time = datetime.datetime.now()
         duration = (end_time - start_time).seconds
