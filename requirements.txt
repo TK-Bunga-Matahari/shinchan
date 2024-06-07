@@ -4,6 +4,8 @@
 #
 #    pip-compile
 #
+ace==0.3.3
+    # via -r requirements.in
 contourpy==1.2.1
     # via matplotlib
 cycler==0.12.1
@@ -21,6 +23,7 @@ matplotlib==3.9.0
 numpy==1.26.4
     # via
     #   -r requirements.in
+    #   ace
     #   contourpy
     #   matplotlib
     #   pandas
@@ -43,7 +46,9 @@ python-dateutil==2.9.0.post0
 pytz==2024.1
     # via pandas
 scipy==1.13.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   ace
 seaborn==0.13.2
     # via -r requirements.in
 six==1.16.0
