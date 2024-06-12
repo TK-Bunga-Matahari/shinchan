@@ -6,3 +6,4 @@ seaborn
 matplotlib
 ace
 python-dotenv
+requests
