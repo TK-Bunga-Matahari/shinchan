@@ -43,6 +43,8 @@ python-dateutil==2.9.0.post0
     # via
     #   matplotlib
     #   pandas
+python-dotenv==1.0.1
+    # via -r requirements.in
 pytz==2024.1
     # via pandas
 scipy==1.13.1
