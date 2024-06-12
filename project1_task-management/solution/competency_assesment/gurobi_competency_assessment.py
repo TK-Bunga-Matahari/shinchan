@@ -19,7 +19,11 @@ import matplotlib.pyplot as plt
 from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
 
-full = True
+
+# User Parameters
+
+license_file_path = "./data/gurobi.lic"
+full = False
 
 if full:
     # Data Fix
@@ -31,13 +35,13 @@ else:
     TASK_PATH = "./mini_data/mini_data - task.csv"
 
 
-def s1_data_structure_CA():
+def s1_data_structure_CA(employee_path, task_path, license_file):
     """# 1. Define the Data Structure"""
 
     try:
         # Run this if the data in Local/Repository
-        new_employee_path = EMPLOYEE_PATH
-        new_task_path = TASK_PATH
+        new_employee_path = employee_path
+        new_task_path = task_path
 
         """## 1.1. Pre-Processing: Employee Data"""
 
@@ -99,15 +103,18 @@ def s1_data_structure_CA():
         score = ca.rank_MSG(qs)
         score_df = pd.DataFrame.from_dict(score, orient="index")
 
+        """## 1.5. Pre-Processing: Get the License of Gurobi"""
+        params = read_license_file(license_file)
+
         # Export the score dictionary to CSV
         score_df.to_csv("./output_CA/score.csv")
 
-        return employees, skills_name, tasks, story_points, company_tasks, score
+        return employees, skills_name, tasks, story_points, company_tasks, score, params
 
     except Exception as e:
         send_discord_notification(f"An error occured in s1_data_structure_CA: {e}")
         print(f"An error occurred in s1_data_structure_CA: {e}")
-        return [], [], [], {}, {}, {}
+        return [], [], [], {}, {}, {}, {}
 
 
 """#### Generic Function"""
@@ -139,21 +146,31 @@ def get_employee_tasks(
     return comp, task, sp, wasted_sp, sim
 
 
-def s2_construct_model():
+# Get the License of Gurobi
+def read_license_file(filepath):
+    params = {}
+    with open(filepath, "r") as file:
+        for line in file:
+            if line.startswith("WLSACCESSID"):
+                params["WLSACCESSID"] = line.split("=")[1].strip()
+            elif line.startswith("WLSSECRET"):
+                params["WLSSECRET"] = line.split("=")[1].strip()
+            elif line.startswith("LICENSEID"):
+                params["LICENSEID"] = int(line.split("=")[1].strip())
+    return params
+
+
+def s2_construct_model(license_params):
     """# 2. Construct the Model"""
 
     try:
-        WLSACCESSID = "f26730de-b14b-4197-9dbd-7d12372b5d9e"
-        WLSSECRET = "4ff3e9d2-037b-47c4-898d-6de34404e994"
-        LICENSEID = 2521640
-
         # Create an environment with WLS license
-        params = {
-            "WLSACCESSID": WLSACCESSID,
-            "WLSSECRET": WLSSECRET,
-            "LICENSEID": LICENSEID,
+        parameter = {
+            "WLSACCESSID": license_params["WLSACCESSID"],
+            "WLSSECRET": license_params["WLSSECRET"],
+            "LICENSEID": license_params["LICENSEID"],
         }
-        env = gp.Env(params=params)
+        env = gp.Env(params=parameter)
 
         # Create the model within the Gurobi environment
         model = gp.Model(name="task_assignment", env=env)
@@ -861,7 +878,7 @@ def s8_MOO_1(
                 assessment_score_3,
                 assessment_score_4,
             ],
-            labels=[
+            label=[
                 "Obj 1: Min Idle Employee",
                 "Obj 2: Max Similarity Score",
                 "Obj 3: Balancing the Workload",
@@ -1056,7 +1073,7 @@ def s9_MOO_2(
         plt.figure(figsize=(10, 5))
         plt.boxplot(
             data,
-            labels=[
+            label=[
                 "Objective 1\nMin Idle Employee",
                 "Objective 2\nMax Assessment Score",
                 "Objective 3\nBalancing the Workload",
@@ -1105,19 +1122,9 @@ class GapCallback:
                         if int(percentage_gap) not in self.reported_gaps:
                             print(f"Model reached {int(percentage_gap)}% gap.")
                             send_discord_notification(
-                                f"Model reached {int(percentage_gap)}% gap."
+                                f"Model reached {int(percentage_gap) - 1}% gap."
                             )
                             self.reported_gaps.add(int(percentage_gap))
-
-
-def wait_for_y():
-    while True:
-        user_input = input("Press 'Y' to continue: ")
-        if user_input.upper() == "Y":
-            print("Continuing process...\n\n")
-            break
-        else:
-            print("Invalid input. Please press 'Y'.")
 
 
 def close_plot():
@@ -1150,7 +1157,6 @@ def main():
     ==============================================
     """
     print(header)
-    # wait_for_y()
 
     header_msg = (
         f"Task Assignment Optimization Problem: START with Competence Assessment"
@@ -1167,9 +1173,15 @@ def main():
 
     try:
         # Section 1
-        employees, skills_name, tasks, story_points, company_tasks, score = (
-            s1_data_structure_CA()
-        )
+        (
+            employees,
+            skills_name,
+            tasks,
+            story_points,
+            company_tasks,
+            score,
+            license_params,
+        ) = s1_data_structure_CA(EMPLOYEE_PATH, TASK_PATH, license_file_path)
 
         section_1_msg_1 = f"Section 1: Data Structure Run Successfully"
         section_1_msg_2 = f"score.csv has been saved in the output_CA/score folder.\n\n"
@@ -1179,7 +1191,7 @@ def main():
         send_discord_notification(section_1_msg_2)
 
         # Section 2
-        model = s2_construct_model()
+        model = s2_construct_model(license_params)
         if model:
             print(f"Section 2: Construct Model Run Successfully\n\n")
             send_discord_notification("Section 2: Construct Model Run Successfully")
@@ -1289,35 +1301,6 @@ def main():
         else:
             send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
-
-        # Section 8
-        # send_discord_notification("Section 8: MOO Method 1 START")
-        # start_time = datetime.datetime.now()
-        # assessment_score_4 = s8_MOO_1(
-        #     model,
-        #     employees,
-        #     company_tasks,
-        #     score,
-        #     story_points,
-        #     max_employee_workload,
-        #     mu_Z_1,
-        #     mu_Z_2,
-        #     mu_Z_3,
-        #     assessment_score_1,
-        #     assessment_score_2,
-        #     assessment_score_3,
-        # )
-        # end_time = datetime.datetime.now()
-        # duration = (end_time - start_time).seconds
-
-        # if assessment_score_4 is not None:
-        #     send_discord_notification(
-        #         f"Section 8: MOO Method 1 Run Successfully with {duration} seconds"
-        #     )
-        #     print(f"Section 8: MOO Method 1 Run Successfully\n\n")
-        # else:
-        #     send_discord_notification("MOO Method 1 failed.")
-        #     raise Exception("MOO Method 1 failed.")
 
         # Section 9
         send_discord_notification("Section 9: MOO Method 2 START")
