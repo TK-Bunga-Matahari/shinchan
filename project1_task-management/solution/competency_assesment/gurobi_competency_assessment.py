@@ -64,6 +64,7 @@ MIPFocus = 1
 MIPGap = 0.01
 heuristics = 0.8
 threads = 2
+MIPGap_moo = 0.05
 
 
 def s1_data_structure_CA(employee_path, task_path):
@@ -766,158 +767,6 @@ def s7_objective3(
         return None, None, None
 
 
-def s8_MOO_1(
-    model,
-    employees,
-    company_tasks,
-    score,
-    story_points,
-    max_employee_workload,
-    mu_Z_1,
-    mu_Z_2,
-    mu_Z_3,
-    assessment_score_1,
-    assessment_score_2,
-    assessment_score_3,
-):
-    """# 8. Multi-Objective Approach: 1) Weighted Method
-    ## 8.1. Set The Objective Model
-
-    $$
-    \\mu_{Z_4} = min.\\:M_{1j} = \\alpha \\cdot min. \\: \\mu_{Z_1} + \\beta \\cdot max. \\: \\mu_{Z_2} + \\gamma \\cdot min. \\: \\mu_{Z_3} \\quad \\tag{4}
-    $$
-    """
-
-    try:
-        alpha = 0
-        beta = 0.8
-        gamma = 0.2
-
-        # MOO method 1
-        mu_Z_4 = (alpha * mu_Z_1) + (beta * mu_Z_2) + (gamma * mu_Z_3)
-        model.setObjective(mu_Z_4, GRB.MINIMIZE)
-
-        """## 8.2. Solve The Model of Objective $(4)$"""
-
-        # solve the model
-        model.optimize()
-
-        """### 8.2.1 Print The Solver Results"""
-
-        # Check and process the solution
-        if model.status == GRB.OPTIMAL:
-            print("Solution Found!")
-            print(f"Obj. Value 4 i.e. Multi Objective Method 1: {model.ObjVal}\n")
-
-            x_hat_4 = {}
-            for j in employees:
-                result = get_employee_tasks(
-                    j, company_tasks, model, score, story_points, max_employee_workload
-                )
-                if len(result[1]) > 0:
-                    x_hat_4[j] = result
-        else:
-            print("No Solution Found!")
-            x_hat_4 = {}
-
-        """## 8.3. Show the Solver's Result"""
-
-        # Set display options
-        pd.set_option("display.max_rows", 500)
-        pd.set_option("display.max_columns", 500)
-
-        # Convert dictionary to DataFrame and set 'employee' as index
-        result_4 = pd.DataFrame.from_dict(
-            x_hat_4,
-            orient="index",
-            columns=[
-                "company",
-                "assigned_task",
-                "sum_sp",
-                "wasted_sp",
-                "assessment_score",
-            ],
-        )
-        result_4.index.name = "employee"
-
-        result_4.to_csv("./output_CA/result_4_MOO_1.csv")
-
-        """### 8.3.1 Statistics of The Objective"""
-
-        total_employee = len(employees)
-        total_sp = sum(story_points.values())
-        total_active_employee = len(set(employee for employee in x_hat_4.keys()))
-        total_active_sp = sum(value[2] for value in x_hat_4.values())
-        total_idle_employee = total_employee - total_active_employee
-        total_wasted_sp = total_sp - total_active_sp
-
-        print(f"Total Employee\t\t\t: {total_employee}")
-        print(
-            f"Total Active Employee\t\t: {total_active_employee}\t{(total_active_employee/total_employee)*100:.2f}%"
-        )
-        print(
-            f"Total Idle Employee\t\t: {total_idle_employee}\t{(total_idle_employee/total_employee)*100:.2f}%\n"
-        )
-        print(f"Total Story Points\t\t: {total_sp}")
-        print(
-            f"Total Active Story Points\t: {total_active_sp}\t{(total_active_sp/total_sp)*100:.2f}%"
-        )
-        print(
-            f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
-        )
-
-        """### 8.3.2. Distribution With Respect to the Assessment Score"""
-
-        # timer for auto close plot
-        timer = threading.Timer(3, close_plot)
-        timer.start()
-
-        # make boxplot for objective 1 with respect to the assessment score
-        assessment_score_4 = (
-            result_4["assessment_score"].explode().reset_index(drop=True)
-        )
-
-        if len(assessment_score_4) != 0:
-            assessment_score_4.plot(kind="box")
-            plt.title("Assessment Score Boxplot of MOO Method 1")
-            plt.show()
-        else:
-            print("No data to show")
-
-        """## 8.4 Comparing MOO Method 3 to Single Objective"""
-
-        # timer for auto close plot
-        timer = threading.Timer(3, close_plot)
-        timer.start()
-
-        # merge all boxplot in one graph
-        plt.figure(figsize=(10, 5))
-        plt.boxplot(
-            [
-                assessment_score_1,
-                assessment_score_2,
-                assessment_score_3,
-                assessment_score_4,
-            ],
-            label=[
-                "Obj 1: Min Idle Employee",
-                "Obj 2: Max Similarity Score",
-                "Obj 3: Balancing the Workload",
-                "MOO Method 1",
-            ],
-        )
-        plt.title("Overall Assessment Score Boxplot")
-        plt.xticks(rotation=15)
-        plt.savefig("./output_CA/compare_SO_MOO_1.png")
-        plt.show()
-
-        return assessment_score_4
-
-    except Exception as e:
-        send_discord_notification(f"An error occured in s8_MOO_1: {e}")
-        print(f"An error occurred in s8_MOO_1: {e}")
-
-
 def s8_MOO(
     model,
     employees,
@@ -933,8 +782,8 @@ def s8_MOO(
     assessment_score_2,
     assessment_score_3,
 ):
-    """# 9. Multi-Objective Approach: 2) Goal Programming Optimization Method
-    ## 9.1. Set The Objective Model
+    """# 8. Multi-Objective Approach: 2) Goal Programming Optimization Method
+    ## 8.1. Set The Objective Model
 
     $$
     D = \\sum_{k=1}^{3} \\left( W_{plus_k} \\cdot d_{plus_k} + W_{minus_k} \\cdot d_{minus_k} \\right) / \\mu_{Z_star_k}
@@ -988,40 +837,36 @@ def s8_MOO(
         # Minimize D
         model.setObjective(D, GRB.MINIMIZE)
 
-        ## 9.2. Solve The Model
+        ## 8.2. Solve The Model
         gap_callback = GapCallback()
-        model.setParam("MIPGap", 0.025)
+        model.setParam("MIPGap", MIPGap_moo)
 
         # Solve the model
         model.optimize(gap_callback)
 
-        ## 9.3. Print The Solver Results
+        ## 8.3. Print The Solver Results
 
         # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
             print(f"Obj. Value 5 i.e. Deviation: {model.ObjVal}\n")
 
-            x_hat_5 = {}
+            x_hat_4 = {}
             for j in employees:
                 result = get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
-                    x_hat_5[j] = result
+                    x_hat_4[j] = result
         else:
             print("No Solution Found!")
-            x_hat_5 = {}
+            x_hat_4 = {}
 
-        ## 9.4. Show the Solver's Result
-
-        # Set display options
-        pd.set_option("display.max_rows", 500)
-        pd.set_option("display.max_columns", 500)
+        ## 8.4. Show the Solver's Result
 
         # Show data that has positive metrics score
-        result_5 = pd.DataFrame.from_dict(
-            x_hat_5,
+        result_4 = pd.DataFrame.from_dict(
+            x_hat_4,
             orient="index",
             columns=[
                 "company",
@@ -1032,15 +877,15 @@ def s8_MOO(
             ],
         )
 
-        result_5.index.name = "employee"
-        result_5.to_csv("./output_CA/result_5_MOO_2.csv")
+        result_4.index.name = "employee"
+        result_4.to_csv("./output_CA/result_4_MOO.csv")
 
-        ## 9.5. Statistics of The Objective
+        ## 8.5. Statistics of The Objective
 
         total_employee = len(employees)
         total_sp = sum(story_points.values())
-        total_active_employee = len(set(employee for employee in x_hat_5.keys()))
-        total_active_sp = sum(value[2] for value in x_hat_5.values())
+        total_active_employee = len(set(employee for employee in x_hat_4.keys()))
+        total_active_sp = sum(value[2] for value in x_hat_4.values())
         total_idle_employee = total_employee - total_active_employee
         total_wasted_sp = total_sp - total_active_sp
 
@@ -1059,25 +904,25 @@ def s8_MOO(
             f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
         )
 
-        ## 9.6. Distribution With Respect to the Assessment Score
+        ## 8.6. Distribution With Respect to the Assessment Score
 
         # Timer for auto close plot
         timer = threading.Timer(3, close_plot)
         timer.start()
 
-        # Make boxplot for x_hat_5
-        assessment_score_5 = (
-            result_5["assessment_score"].explode().reset_index(drop=True)
+        # Make boxplot for x_hat_4
+        assessment_score_4 = (
+            result_4["assessment_score"].explode().reset_index(drop=True)
         )
 
-        if len(assessment_score_5) != 0:
-            assessment_score_5.plot(kind="box")
+        if len(assessment_score_4) != 0:
+            assessment_score_4.plot(kind="box")
             plt.title("Assessment Score Boxplot of MOO Method 2")
             plt.show()
         else:
             print("No data to show")
 
-        ## 9.7. Comparing MOO Method 2 to Single Objective and MOO Method 1
+        ## 8.7. Comparing MOO Method 2 to Single Objective and MOO Method 1
 
         # Timer for auto close plot
         timer = threading.Timer(3, close_plot)
@@ -1088,7 +933,7 @@ def s8_MOO(
             assessment_score_1,
             assessment_score_2,
             assessment_score_3,
-            assessment_score_5,
+            assessment_score_4,
         ]
 
         plt.figure(figsize=(10, 5))
@@ -1098,19 +943,19 @@ def s8_MOO(
                 "Objective 1\nMin Idle Employee",
                 "Objective 2\nMax Assessment Score",
                 "Objective 3\nBalancing the Workload",
-                "MOO Method 2\nGoal Programming",
+                "MOO with\nGoal Programming",
             ],
         )
         plt.title("Overall Assessment Score Boxplot")
         plt.xticks(rotation=15)
-        plt.savefig("./output_CA/compare_SO_MOO_2.png")
+        plt.savefig("./output_CA/compare_SO_MOO.png")
         plt.show()
 
-        return assessment_score_5
+        return assessment_score_4
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s9_MOO_2: {e}")
-        print(f"An error occurred in s9_MOO_2: {e}")
+        send_discord_notification(f"An error occured in s8_MOO: {e}")
+        print(f"An error occurred in s8_MOO: {e}")
 
 
 class GapCallback:
@@ -1319,10 +1164,10 @@ def main():
             send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
 
-        # Section 9
-        send_discord_notification("Section 9: MOO Method 2 START")
+        # Section 8
+        send_discord_notification("Section 8: MOO START")
         start_time = datetime.datetime.now()
-        assessment_score_5 = s8_MOO(
+        assessment_score_4 = s8_MOO(
             model,
             employees,
             company_tasks,
@@ -1339,14 +1184,14 @@ def main():
         )
         end_time = datetime.datetime.now()
         duration = (end_time - start_time).seconds
-        if assessment_score_5 is not None:
+        if assessment_score_4 is not None:
             send_discord_notification(
-                f"Section 9: MOO Method 2 Run Successfully with {duration} seconds"
+                f"Section 8: MOO Run Successfully with {duration} seconds"
             )
-            print(f"Section 9: MOO Method 2 Run Successfully\n\n")
+            print(f"Section 8: MOO Run Successfully\n\n")
         else:
-            send_discord_notification("MOO Method 2 failed.")
-            raise Exception("MOO Method 2 failed.")
+            send_discord_notification("MOO failed.")
+            raise Exception("MOO failed.")
 
     except Exception as e:
         send_discord_notification(f"An error occurred: {e}")
