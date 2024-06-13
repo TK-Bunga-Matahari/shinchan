@@ -36,14 +36,14 @@ full = False
 
 # Run this if the data in Local/Repository
 if full:
-    EMPLOYEE_PATH = "./data/fixed_data_employee.csv"
-    TASK_PATH = "./data/fixed_data_task.csv"
+    employee_path = "./data/fixed_data_employee.csv"
+    task_path = "./data/fixed_data_task.csv"
 
     # maximum workload for each employee
     max_employee_workload = 20
 else:
-    EMPLOYEE_PATH = "./mini_data/mini_data - employee.csv"
-    TASK_PATH = "./mini_data/mini_data - task.csv"
+    employee_path = "./mini_data/mini_data - employee.csv"
+    task_path = "./mini_data/mini_data - task.csv"
 
     # maximum workload for each employee
     max_employee_workload = 8
@@ -66,18 +66,14 @@ heuristics = 0.8
 threads = 2
 
 
-def s1_data_structure_CA(employee_path, task_path, license_file):
+def s1_data_structure_CA(employee_path, task_path):
     """# 1. Define the Data Structure"""
 
     try:
-        # Run this if the data in Local/Repository
-        new_employee_path = employee_path
-        new_task_path = task_path
-
         """## 1.1. Pre-Processing: Employee Data"""
 
         # Read data
-        employee_skills_df = pd.read_csv(new_employee_path, index_col="employee_id")
+        employee_skills_df = pd.read_csv(employee_path, index_col="employee_id")
         employee_skills_df.drop(columns=["No", "Role"], inplace=True, errors="ignore")
 
         employees = employee_skills_df.index.tolist()
@@ -85,7 +81,7 @@ def s1_data_structure_CA(employee_path, task_path, license_file):
 
         """## 1.2. Pre-Processing: Task Data"""
 
-        task_df = pd.read_csv(new_task_path, index_col="task_id")
+        task_df = pd.read_csv(task_path, index_col="task_id")
 
         tasks = task_df.index.tolist()
         company_names = list(set(task_df["project_id"]))
@@ -103,8 +99,6 @@ def s1_data_structure_CA(employee_path, task_path, license_file):
 
         # sort the company tasks from C1 to C5
         company_tasks = dict(sorted(company_tasks.items()))
-
-        company_tasks_df = pd.DataFrame.from_dict(company_tasks, orient="index")
 
         """## 1.4. Pre-Processing: Competency Assessment
 
@@ -134,18 +128,15 @@ def s1_data_structure_CA(employee_path, task_path, license_file):
         score = ca.rank_MSG(qs)
         score_df = pd.DataFrame.from_dict(score, orient="index")
 
-        """## 1.5. Pre-Processing: Get the License of Gurobi"""
-        params = read_license_file(license_file)
-
         # Export the score dictionary to CSV
         score_df.to_csv("./output_CA/score.csv")
 
-        return employees, skills_name, tasks, story_points, company_tasks, score, params
+        return employees, tasks, story_points, company_tasks, score, info
 
     except Exception as e:
         send_discord_notification(f"An error occured in s1_data_structure_CA: {e}")
         print(f"An error occurred in s1_data_structure_CA: {e}")
-        return [], [], [], {}, {}, {}, {}
+        return [], [], [], {}, {}, {}
 
 
 """#### Generic Function"""
@@ -191,10 +182,12 @@ def read_license_file(filepath):
     return params
 
 
-def s2_construct_model(license_params):
+def s2_construct_model(license_path):
     """# 2. Construct the Model"""
 
     try:
+        license_params = read_license_file(license_path)
+
         # Create an environment with WLS license
         parameter = {
             "WLSACCESSID": license_params["WLSACCESSID"],
@@ -207,11 +200,11 @@ def s2_construct_model(license_params):
         model = gp.Model(name="task_assignment", env=env)
 
         # Set Gurobi parameters to improve performance
-        model.setParam("Presolve", 2)  # Aggressive presolve
-        model.setParam("MIPFocus", 1)  # Focus on improving the best bound
-        model.setParam("MIPGap", 0.01)  # 1% optimality gap
-        model.setParam("Heuristics", 0.8)  # Increase heuristics effort
-        model.setParam("Threads", 16)  # Use 8 threads, adjust based on your CPU
+        model.setParam("Presolve", presolve)  # Aggressive presolve
+        model.setParam("MIPFocus", MIPFocus)  # Focus on improving the best bound
+        model.setParam("MIPGap", MIPGap)  # 1% optimality gap
+        model.setParam("Heuristics", heuristics)  # Increase heuristics effort
+        # model.setParam("Threads", threads)  # Use 8 threads, adjust based on your CPU
 
         return model
 
@@ -258,31 +251,28 @@ def s3_decision_variable(model, tasks, employees, company_tasks):
     """
 
     try:
-        if full:
-            max_employee_workload = 20
-        else:
-            # mini data
-            max_employee_workload = 8
-
         # Create decision variables for x and y
+
+        # Decision variable x to represent employee j is assigned to task i in project k
         x = {}
         for k, task in company_tasks.items():
             for i in task:
                 for j in employees:
                     x[(i, j, k)] = model.addVar(vtype=GRB.BINARY, name=f"x_{i}_{j}_{k}")
 
-        # Decision variable y to represent cardinality of each employee and company
+        # Decision variable y to represent employee j is assigned to project k
         y = {}
         for j in employees:
             for k in company_tasks.keys():
                 y[(j, k)] = model.addVar(vtype=GRB.BINARY, name=f"y_{j}_{k}")
 
+        # Decision variable z to represent task i is assigned to employee j
         z = {}
         for i in tasks:
             for j in employees:
                 z[(i, j)] = model.addVar(vtype=GRB.BINARY, name=f"z_{i}_{j}")
 
-        # Decision variable for max workload
+        # Decision variable for max workload that can be assigned
         max_workload = model.addVar(
             vtype=GRB.INTEGER, lb=0, ub=max_employee_workload, name="max_workload"
         )
@@ -928,7 +918,7 @@ def s8_MOO_1(
         print(f"An error occurred in s8_MOO_1: {e}")
 
 
-def s9_MOO_2(
+def s8_MOO(
     model,
     employees,
     company_tasks,
@@ -952,11 +942,11 @@ def s9_MOO_2(
     """
 
     try:
-        # Define weight dictionary for each objective
+        # define weight dictionary for each objective
         Weight = {
-            1: 0.05,
-            2: 0.85,
-            3: 0.1,
+            1: weight_obj1,
+            2: weight_obj2,
+            3: weight_obj3,
         }
 
         # Define the deviation plus and minus variables
@@ -1206,20 +1196,19 @@ def main():
         # Section 1
         (
             employees,
-            skills_name,
             tasks,
             story_points,
             company_tasks,
             score,
-            license_params,
-        ) = s1_data_structure_CA(EMPLOYEE_PATH, TASK_PATH, license_file_path)
+            info,
+        ) = s1_data_structure_CA(employee_path, task_path)
 
-        section_1_msg_1 = f"Section 1: Data Structure Run Successfully"        
-        print(section_1_msg_1)        
-        send_discord_notification(section_1_msg_1)        
+        section_1_msg_1 = f"Section 1: Data Structure Run Successfully"
+        print(section_1_msg_1)
+        send_discord_notification(section_1_msg_1)
 
         # Section 2
-        model = s2_construct_model(license_params)
+        model = s2_construct_model(license_file_path)
         if model:
             print(f"Section 2: Construct Model Run Successfully\n\n")
             send_discord_notification("Section 2: Construct Model Run Successfully")
@@ -1333,7 +1322,7 @@ def main():
         # Section 9
         send_discord_notification("Section 9: MOO Method 2 START")
         start_time = datetime.datetime.now()
-        assessment_score_5 = s9_MOO_2(
+        assessment_score_5 = s8_MOO(
             model,
             employees,
             company_tasks,
