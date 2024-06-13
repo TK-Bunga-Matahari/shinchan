@@ -20,19 +20,50 @@ from gurobipy import GRB, quicksum
 from competency_assessment import CompetencyAssessment
 
 
-# User Parameters
+# User Define Parameters
 
+# Set the path of the license file
 license_file_path = "./data/gurobi.lic"
+
+"""
+Data of Workforce and Task
+
+
+On this notebook, if you want to use the full data, you can set the full variable to True
+If you want to use the mini data, you can set the full variable to False
+"""
 full = False
 
+# Run this if the data in Local/Repository
 if full:
-    # Data Fix
     EMPLOYEE_PATH = "./data/fixed_data_employee.csv"
     TASK_PATH = "./data/fixed_data_task.csv"
+
+    # maximum workload for each employee
+    max_employee_workload = 20
 else:
-    # Mini Data
     EMPLOYEE_PATH = "./mini_data/mini_data - employee.csv"
     TASK_PATH = "./mini_data/mini_data - task.csv"
+
+    # maximum workload for each employee
+    max_employee_workload = 8
+
+# Methodology: Competency Assessment or Weighted Euclidean Distance
+overqualification = True
+
+# Weight for each objective
+weight_obj1 = 0.03
+weight_obj2 = 0.9
+weight_obj3 = 0.07
+
+# Define for Model Tune Parameters
+
+# define the tuned parameters of the model
+presolve = 2
+MIPFocus = 1
+MIPGap = 0.01
+heuristics = 0.8
+threads = 2
 
 
 def s1_data_structure_CA(employee_path, task_path, license_file):
@@ -1138,14 +1169,14 @@ def get_timestamp():
 def send_discord_notification(message):
     url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
     data = {"content": f"{get_timestamp()} {message}"}
-    response = requests.post(
-        url, data=json.dumps(data), headers={"Content-Type": "application/json"}
-    )
+    # response = requests.post(
+    #     url, data=json.dumps(data), headers={"Content-Type": "application/json"}
+    # )
 
-    if response.status_code == 204:
-        print("Notification sent successfully.")
-    else:
-        print("Failed to send notification.")
+    # if response.status_code == 204:
+    #     print("Notification sent successfully.")
+    # else:
+    #     print("Failed to send notification.")
 
 
 def main():
@@ -1183,12 +1214,9 @@ def main():
             license_params,
         ) = s1_data_structure_CA(EMPLOYEE_PATH, TASK_PATH, license_file_path)
 
-        section_1_msg_1 = f"Section 1: Data Structure Run Successfully"
-        section_1_msg_2 = f"score.csv has been saved in the output_CA/score folder.\n\n"
-        print(section_1_msg_1)
-        print(section_1_msg_2)
-        send_discord_notification(section_1_msg_1)
-        send_discord_notification(section_1_msg_2)
+        section_1_msg_1 = f"Section 1: Data Structure Run Successfully"        
+        print(section_1_msg_1)        
+        send_discord_notification(section_1_msg_1)        
 
         # Section 2
         model = s2_construct_model(license_params)
