@@ -52,6 +52,7 @@ import threading
 import pandas as pd
 import gurobipy as gp
 import matplotlib.pyplot as plt
+
 from dotenv import load_dotenv
 from typing import Dict, List, Tuple, Any
 from gurobipy import GRB, Model, quicksum
@@ -139,7 +140,7 @@ def s1_data_structure(employee_path: str, task_path: str, overqualification: boo
         else:
             info = {}
             score = {}
-        
+
         # Export the score dictionary to CSV
         score_df = pd.DataFrame.from_dict(score, orient="index")
         score_df.to_csv("./output/score.csv")
@@ -152,7 +153,7 @@ def s1_data_structure(employee_path: str, task_path: str, overqualification: boo
         return [], [], {}, {}, {}, {}
 
 
-def s2_construct_model(license_params):
+def s2_construct_model(license_params: Dict[str, Any]) -> Model:
     """
     Constructs the optimization model.
 
@@ -171,7 +172,7 @@ def s2_construct_model(license_params):
         env = gp.Env(params=license_params) if license_params else None
 
         # Create the model within the Gurobi environment
-        model = gp.Model(name="task_assignment", env=env)
+        model = Model(name="task_assignment", env=env)
 
         # Set Gurobi parameters to improve performance
         model.setParam("Presolve", presolve)  # Aggressive presolve
@@ -185,7 +186,7 @@ def s2_construct_model(license_params):
     except Exception as e:
         send_discord_notification(f"An error occured in s2_construct_model: {e}")
         print(f"An error occurred in s2_construct_model: {e}")
-        return None
+        return model
 
 
 def s3_decision_variable(model, tasks, employees, company_tasks):
