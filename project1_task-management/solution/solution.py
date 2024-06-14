@@ -62,20 +62,48 @@ load_dotenv()
 
 
 # Convert string to boolean
-def str_to_bool(value):
+def str_to_bool(value: str) -> bool:
+    """
+    Convert a string representation of truth to a boolean value.
+
+    This function takes a string and converts it to a boolean. The conversion
+    is case-insensitive and considers the strings "true", "1", and "yes" as
+    True, and all other strings as False.
+
+    Args:
+        value (str): The string to be converted to a boolean. Expected values are
+                     case-insensitive "true", "1", "yes" for True, and anything else for False.
+
+    Returns:
+        bool: The boolean value corresponding to the string representation.
+              Returns True for "true", "1", "yes" (case-insensitive), and False otherwise.
+
+    Examples:
+        >>> str_to_bool("true")
+        True
+        >>> str_to_bool("False")
+        False
+        >>> str_to_bool("YES")
+        True
+        >>> str_to_bool("no")
+        False
+    """
     return value.lower() in ("true", "1", "yes")
 
 
 # Get License Information from Environment Variables
+wls_access_id = os.getenv("WLSACCESSID")
+wls_secret = os.getenv("WLSSECRET")
 license_id = os.getenv("LICENSEID")
-if license_id is None:
-    raise ValueError("LICENSEID environment variable is not set")
 
-license_params = {
-    "WLSACCESSID": os.getenv("WLSACCESSID"),
-    "WLSSECRET": os.getenv("WLSSECRET"),
-    "LICENSEID": int(license_id),
-}
+if wls_access_id is None or wls_secret is None or license_id is None:
+    license_params = {}
+else:
+    license_params = {
+        "WLSACCESSID": wls_access_id,
+        "WLSSECRET": wls_secret,
+        "LICENSEID": int(license_id),
+    }
 
 # Optimization Parameters from Environment Variables
 presolve = int(os.getenv("PRESOLVE", 2))
@@ -220,12 +248,7 @@ def s2_construct_model(license_params):
 
     try:
         # Create an environment with WLS license
-        parameter = {
-            "WLSACCESSID": license_params["WLSACCESSID"],
-            "WLSSECRET": license_params["WLSSECRET"],
-            "LICENSEID": license_params["LICENSEID"],
-        }
-        env = gp.Env(params=parameter)
+        env = gp.Env(params=license_params) if license_params else None
 
         # Create the model within the Gurobi environment
         model = gp.Model(name="task_assignment", env=env)
@@ -235,7 +258,7 @@ def s2_construct_model(license_params):
         model.setParam("MIPFocus", MIPFocus)  # Focus on improving the best bound
         model.setParam("MIPGap", MIPGap)  # 1% optimality gap
         model.setParam("Heuristics", heuristics)  # Increase heuristics effort
-        # model.setParam("Threads", threads)  # Use 8 threads, adjust based on your CPU
+        model.setParam("Threads", threads)  # Use threads, adjust based on your CPU
 
         return model
 
