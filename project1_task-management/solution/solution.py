@@ -1,13 +1,50 @@
 """
-# Task Assignment Optimization Problem with Gurobi Framework
+Module Name: Task Assignment Optimization Problem Solution
 
-_by: TK-Bunga Matahari Team_
+Description:
+This module contains the solution for the Task Assignment Optimization Problem.
+The solution is divided into several sections, each responsible for a specific task:
+1. Data Input: Functions to read and validate input data for the task assignment problem.
+2. Optimization Model: Implementation of the optimization model using appropriate algorithms.
+3. Constraints and Objectives: Definition of constraints and objective functions used in the optimization.
+4. Solution Execution: Functions to execute the optimization model and obtain results.
+5. Output Processing: Functions to format and output the results in a user-friendly manner.
 
+Functions:
+- s1_data_structure_CA(employee_path, task_path): Pre-process and structure employee and task data.
+- s2_construct_model(license_path): Construct the optimization model with specified parameters.
+- s3_decision_variable(model, tasks, employees, company_tasks): Define decision variables for the model.
+- s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload): Set constraints for the optimization model.
+- s5_objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star): Minimize the idle employee.
+- s6_objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star): Maximize the assessment score.
+- s7_objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star): Balance the workload for each employee.
+- s8_MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z_1, mu_Z_2, mu_Z_3, mu_Z_star, assessment_score_1, assessment_score_2, assessment_score_3): Multi-Objective Optimization using Goal Programming.
 
-# 0. The Obligatory Part
+Classes:
+- GapCallback: A callback class to report optimization progress and gap.
+
+Usage:
+Import the module in requirement file and yippy file to process the assessment.
+The solution can be executed by running the main() function, which orchestrates
+the entire workflow from data input to output processing.
+
+Example:
+    from task_assignment_optimization import main
+
+    if __name__ == "__main__":
+        main()
+
+Author:
+TK Bunga Matahari Team
+N. Muafi, I.G.P. Wisnu N., F. Zaid N., Fauzi I.S., Joseph C.L., S. Alisya
+
+Last Modified:
+June 2024
+
 """
 
 # Import library
+import os
 import json
 import requests
 import datetime
@@ -15,55 +52,53 @@ import threading
 import pandas as pd
 import gurobipy as gp
 import matplotlib.pyplot as plt
+from dotenv import load_dotenv
 from gurobipy import GRB, quicksum
 from yippy import CompetencyAssessment
 
 
-# User Define Parameters
-
-# Set the path of the license file
-license_file_path = "./data/gurobi.lic"
-
-"""
-Data of Workforce and Task
+# Load environment variables from .env file
+load_dotenv()
 
 
-On this notebook, if you want to use the full data, you can set the full variable to True
-If you want to use the mini data, you can set the full variable to False
-"""
-full = False
+# Convert string to boolean
+def str_to_bool(value):
+    return value.lower() in ("true", "1", "yes")
 
-# Run this if the data in Local/Repository
-if full:
-    employee_path = "./data/fixed_data_employee.csv"
-    task_path = "./data/fixed_data_task.csv"
 
-    # maximum workload for each employee
-    max_employee_workload = 20
-else:
-    employee_path = "./mini_data/mini_data - employee.csv"
-    task_path = "./mini_data/mini_data - task.csv"
+# Get License Information from Environment Variables
+license_id = os.getenv("LICENSEID")
+if license_id is None:
+    raise ValueError("LICENSEID environment variable is not set")
 
-    # maximum workload for each employee
-    max_employee_workload = 8
+license_params = {
+    "WLSACCESSID": os.getenv("WLSACCESSID"),
+    "WLSSECRET": os.getenv("WLSSECRET"),
+    "LICENSEID": int(license_id),
+}
 
-# Methodology: Competency Assessment or Weighted Euclidean Distance
-overqualification = True
+# Optimization Parameters from Environment Variables
+presolve = int(os.getenv("PRESOLVE", 2))
+MIPFocus = int(os.getenv("MIPFOCUS", 1))
+MIPGap = float(os.getenv("MIPGAP", 0.01))
+heuristics = float(os.getenv("HEURISTICS", 0.8))
+threads = int(os.getenv("THREADS", 2))
+MIPGap_moo = float(os.getenv("MIPGAP_MOO", 0.05))
 
-# Weight for each objective
-weight_obj1 = 0.03
-weight_obj2 = 0.9
-weight_obj3 = 0.07
+# Objective Weights from Environment Variables
+weight_obj1 = float(os.getenv("WEIGHT_OBJ1", 0.03))
+weight_obj2 = float(os.getenv("WEIGHT_OBJ2", 0.9))
+weight_obj3 = float(os.getenv("WEIGHT_OBJ3", 0.07))
 
-# Define for Model Tune Parameters
+# Methodology from Environment Variables
+overqualification = str_to_bool(os.getenv("OVERQUALIFICATION", "True"))
 
-# define the tuned parameters of the model
-presolve = 2
-MIPFocus = 1
-MIPGap = 0.01
-heuristics = 0.8
-threads = 2
-MIPGap_moo = 0.05
+# File Paths from Environment Variables
+employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
+task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
+
+# Maximum Workload from Environment Variables
+max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
 
 
 def s1_data_structure_CA(employee_path, task_path):
@@ -180,12 +215,10 @@ def read_license_file(filepath):
     return params
 
 
-def s2_construct_model(license_path):
+def s2_construct_model(license_params):
     """# 2. Construct the Model"""
 
     try:
-        license_params = read_license_file(license_path)
-
         # Create an environment with WLS license
         parameter = {
             "WLSACCESSID": license_params["WLSACCESSID"],
@@ -950,7 +983,7 @@ def main():
         send_discord_notification(section_1_msg_1)
 
         # Section 2
-        model = s2_construct_model(license_file_path)
+        model = s2_construct_model(license_params)
         if model:
             print(f"Section 2: Construct Model Run Successfully\n\n")
             send_discord_notification("Section 2: Construct Model Run Successfully")
@@ -961,7 +994,7 @@ def main():
         x, y, z, max_employee_workload, max_workload = s3_decision_variable(
             model, tasks, employees, company_tasks
         )
-        if x and y:
+        if x and y and z:
             print(f"Section 3: Build Decision Variable Run Successfully\n\n")
             send_discord_notification(
                 "Section 3: Build Decision Variable Run Successfully"
