@@ -1004,14 +1004,14 @@ def get_timestamp():
 def send_discord_notification(message):
     url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
     data = {"content": f"{get_timestamp()} {message}"}
-    # response = requests.post(
-    #     url, data=json.dumps(data), headers={"Content-Type": "application/json"}
-    # )
+    response = requests.post(
+        url, data=json.dumps(data), headers={"Content-Type": "application/json"}
+    )
 
-    # if response.status_code == 204:
-    #     print("Notification sent successfully.")
-    # else:
-    #     print("Failed to send notification.")
+    if response.status_code == 204:
+        print("Notification sent successfully.")
+    else:
+        print("Failed to send notification.")
 
 
 def main():

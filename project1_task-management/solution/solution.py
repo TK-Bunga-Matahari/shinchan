@@ -213,40 +213,7 @@ def s2_construct_model(license_path):
 
 
 def s3_decision_variable(model, tasks, employees, company_tasks):
-    """# 3. Build the Decision Variable
-
-    We have 3 sets:
-
-    $$
-    \text{sets} = \begin{cases}
-    I &: \text{set of tasks} \\
-    J &: \text{set of employees} \\
-    K &: \text{set of projects}
-    \\end{cases}
-    $$
-
-    Next, we define parameters, scalars, and data structures. Let:
-
-    $$
-    \begin{align*}
-    i & = \text{task } i \\
-    j & = \text{employee } j \\
-    k & = \text{project } k \\
-    s_i & = \text{story points of task } i \\
-    e_{ij} & = \text{similarity skills of employee } j \text{ for task } i \\
-    \\end{align*}
-    $$
-
-    **Decision Variables:**
-
-    $$
-    \begin{align*}
-    x_{ijk} & = \text{Binary variable indicating whether employee } j \text{ is assigned to task } k \text{ for day } i \\
-    y_{jk} & = \text{Binary variable indicating whether employee } j \text{ is assigned to any task from company } k \\
-    \\end{align*}
-    $$
-
-    """
+    """# 3. Build the Decision Variable"""
 
     try:
         # Create decision variables for x and y
@@ -287,15 +254,7 @@ def s3_decision_variable(model, tasks, employees, company_tasks):
 
 
 def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload):
-    """# 4. Subject to the Constraint
-
-    ## 4.1. Constraint 1: Each Task is Assigned to One Employee
-
-    $$
-    \\sum _{j\\in J}\\:x_{ijk}\\:=\\:1 \\quad \\forall i \\in k, \\: k \\in K
-    $$
-
-    """
+    """# 4. Subject to the Constraints"""
 
     try:
         # constraint 1: each task assigned to one talent
@@ -303,15 +262,7 @@ def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_wo
             for i in task:
                 model.addConstr(quicksum(x[(i, j, k)] for j in employees) == 1)
 
-        """## 4.2. Constraint 2: Each employee works for one company at a time
-
-        Pre-Processing for Constraint 2:
-
-        $$
-        \\sum _{i\\in I_k}x_{ijk} > 0 \\: \\rightarrow \\: y_{jk}=1 \\quad \\forall j\\in J, \\: k\\in K\\:
-        $$
-
-        """
+        """## 4.2. Constraint 2: Each employee works for one company at a time"""
 
         # pre-processing constraint 2
         for j in employees:
@@ -325,24 +276,12 @@ def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_wo
                 )
                 model.addGenConstrIndicator(y[j, k], False, temp_sum, GRB.LESS_EQUAL, 0)
 
-        """$$
-        \\sum _{k\\in K}y_{jk}\\le 1 \\quad \\forall j\\in J
-        $$
-
-        """
-
         # create constraint 2: each employee can only work on one task
         for j in employees:
             # The sum of y[j][k] for all companies (k) should be <= 1
             model.addConstr(quicksum(y[(j, k)] for k in company_tasks.keys()) <= 1)
 
-        """## 4.3. Constraint 3: Employee workload doesn't exceed the capacity
-
-        $$
-        \\sum _{i \\in I} s_i \\cdot x_{ijk} \\le max\\_workload \\quad \\forall j\\in J, \\: k \\in K
-        $$
-
-        """
+        """## 4.3. Constraint 3: Employee workload doesn't exceed the capacity"""
 
         for j in employees:
             for k, tasks in company_tasks.items():
@@ -351,13 +290,7 @@ def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_wo
                     <= max_workload
                 )
 
-        """## 4.4 Constraint 4: Maximum workload is greater than or equal to the workload of each employee For Objective 3
-
-        $$
-        max\\_workload \\ge \\sum_{i \\in I} \\sum_{k \\in K} s_i\\cdot x_{ijk}, \\quad \\forall j\\in J\\:\\:
-        $$
-
-        """
+        """## 4.4 Constraint 4: Maximum workload is greater than or equal to the workload of each employee For Objective 3"""
 
         # constraint 4: max_workload is greater than or equal to the workload of each employee
         for j in employees:
@@ -395,14 +328,7 @@ def s5_objective1(
     max_employee_workload,
     mu_Z_star,
 ):
-    """# 5. Single Objective Approach: 1) Minimize The Idle Employee
-    ## 5.1. Set The Objective Model
-
-    $$
-    \\mu _{Z_1} = min.\\:I_j=\\sum _{j\\in \\:J}\\:\\left(1\\:-\\:\\sum _{k\\in \\:K}\\:y_{jk}\\right) \\quad \\tag{1}
-    $$
-    """
-
+    """# 5. Single Objective Approach: 1) Minimize The Idle Employee"""
     try:
         # objective 1
         idle = []
@@ -520,24 +446,10 @@ def s6_objective2(
     max_employee_workload,
     mu_Z_star,
 ):
-    """# 6. Single Objective Approach: 2) Maximize The Assessment Score
-    ## 6.1. Set The Objective Model
-
-    $$
-    \\mu _{Z_2} = max.\\:A_{ij} = \\sum _{i\\in \\:I} \\sum _{j\\in \\:J} \\sum _{k\\in \\:K} \\: e_{ij} \\cdot x_{ijk} \\quad \\tag{2}
-    $$
-    """
+    """# 6. Single Objective Approach: 2) Maximize The Assessment Score"""
 
     try:
         # objective 2
-        # mu_Z_2 = quicksum(
-        #     score[j][i] * x[i, j, k]
-        #     for k, tasks in company_tasks.items()
-        #     for i in tasks
-        #     for j in employees
-        # )
-
-        # proposed objective 2
         mu_Z_2 = quicksum(
             score[j][i] * z[i, j]
             for k, tasks in company_tasks.items()
@@ -653,13 +565,7 @@ def s7_objective3(
     max_workload,
     mu_Z_star,
 ):
-    """# 7. Single Objective Approach: 3) Balancing Workload For Each Employee
-    ## 7.1. Set The Objective Model
-
-    $$
-    \\mu_{Z_3} = min.\\:W_{j} \\quad \\tag{3}
-    $$
-    """
+    """# 7. Single Objective Approach: 3) Balancing Workload For Each Employee"""
 
     try:
         # single objective 3
@@ -779,13 +685,7 @@ def s8_MOO(
     assessment_score_2,
     assessment_score_3,
 ):
-    """# 8. Multi-Objective Approach: 2) Goal Programming Optimization Method
-    ## 8.1. Set The Objective Model
-
-    $$
-    D = \\sum_{k=1}^{3} \\left( W_{plus_k} \\cdot d_{plus_k} + W_{minus_k} \\cdot d_{minus_k} \\right) / \\mu_{Z_star_k}
-    $$
-    """
+    """# 8. Multi-Objective Approach: 2) Goal Programming Optimization Method"""
 
     try:
         # define weight dictionary for each objective
