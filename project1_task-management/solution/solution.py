@@ -253,7 +253,16 @@ def s3_decision_variable(
         return {}, {}, {}, 0, None
 
 
-def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload):
+def s4_constraint(
+    model: Model,
+    x: Dict[Tuple[int, str, str], Any],
+    y: Dict[Tuple[str, str], Any],
+    z: Dict[Tuple[int, str], Any],
+    employees: List[str],
+    company_tasks: Dict[str, List[int]],
+    story_points: Dict[int, int],
+    max_workload: int,
+) -> None:
     """
     Adds constraints to the optimization model.
 
