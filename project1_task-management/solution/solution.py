@@ -62,7 +62,7 @@ from yippy import CompetencyAssessment
 load_dotenv()
 
 
-def s1_data_structure(employee_path: str, task_path: str) -> Tuple[
+def s1_data_structure(employee_path: str, task_path: str, overqualification: bool) -> Tuple[
     List[str],
     List[int],
     Dict[int, int],
@@ -112,31 +112,36 @@ def s1_data_structure(employee_path: str, task_path: str) -> Tuple[
         # sort the company tasks from C1 to C5
         company_tasks = dict(sorted(company_tasks.items()))
 
-        """
-        # 1.4. Pre-Processing: Competency Assessment
-        First, create RCD-ACD Dataframe that we get from Task Dataframe for RCD and from Employee Dataframe for ACD.
+        # 1.4. Pre-Processing: Skill Metric Score Calculation
+        if overqualification:
+            """
+            # 1.4.1 Pre-Processing: Competency Assessment
+            First, create RCD-ACD Dataframe that we get from Task Dataframe for RCD and from Employee Dataframe for ACD.
+            
+            # 1.4.2 Required Competence Data
+            """
+
+            rcd_df = task_df.drop(columns=["project_id", "story_points"])
+            rcd_df = rcd_df.fillna(0)
+
+            # 1.4.3 Acquired Competence Data
+            # create a copy of the original DataFrame
+            acd_df = employee_skills_df.copy()
+            acd_df = acd_df.fillna(0)
+
+            # 1.4.4 Fit the Data
+            ca = CompetencyAssessment(rcd_df, acd_df)
+            qs, info = ca.fit()
+
+            # 1.4.5 Qualification Space
+            # 1.4.6 Sorted MSG Score for All Tasks
+            score = ca.rank_MSG(qs)
+        else:
+            info = {}
+            score = {}
         
-        # 1.4.1 Required Competence Data
-        """
-
-        rcd_df = task_df.drop(columns=["project_id", "story_points"])
-        rcd_df = rcd_df.fillna(0)
-
-        # 1.4.2 Acquired Competence Data
-        # create a copy of the original DataFrame
-        acd_df = employee_skills_df.copy()
-        acd_df = acd_df.fillna(0)
-
-        # 1.4.3 Fit the Data
-        ca = CompetencyAssessment(rcd_df, acd_df)
-        qs, info = ca.fit()
-
-        # 1.4.4 Qualification Space
-        # 1.4.5 Sorted MSG Score for All Tasks
-        score = ca.rank_MSG(qs)
-        score_df = pd.DataFrame.from_dict(score, orient="index")
-
         # Export the score dictionary to CSV
+        score_df = pd.DataFrame.from_dict(score, orient="index")
         score_df.to_csv("./output/score.csv")
 
         return employees, tasks, story_points, company_tasks, score, info
@@ -1179,7 +1184,7 @@ def main():
     try:
         # Section 1
         employees, tasks, story_points, company_tasks, score, info = s1_data_structure(
-            employee_path, task_path
+            employee_path, task_path, overqualification
         )
         section_1_msg_1 = "Section 1: Data Structure Run Successfully"
         print(section_1_msg_1)
