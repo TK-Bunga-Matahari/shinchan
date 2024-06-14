@@ -11,7 +11,7 @@ The solution is divided into several sections, each responsible for a specific t
 5. Output Processing: Functions to format and output the results in a user-friendly manner.
 
 Functions:
-- s1_data_structure_CA(employee_path, task_path): Pre-process and structure employee and task data.
+- s1_data_structure(employee_path, task_path): Pre-process and structure employee and task data.
 - s2_construct_model(license_path): Construct the optimization model with specified parameters.
 - s3_decision_variable(model, tasks, employees, company_tasks): Define decision variables for the model.
 - s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload): Set constraints for the optimization model.
@@ -62,10 +62,23 @@ from yippy import CompetencyAssessment
 load_dotenv()
 
 
-def s1_data_structure_CA(employee_path, task_path):
-    try:
-        """## 1.1. Pre-Processing: Employee Data"""
+def s1_data_structure(employee_path, task_path):
+    """
+    Sets up the data structure by processing employee and task data.
 
+    Args:
+        employee_path (str): The path to the employee data CSV file.
+        task_path (str): The path to the task data CSV file.
+
+    Returns:
+        Tuple: Contains employees, tasks, story_points, company_tasks, score, and info.
+
+    Example:
+        employees, tasks, story_points, company_tasks, score, info = s1_data_structure('employees.csv', 'tasks.csv')
+    """
+
+    try:
+        # 1.1. Pre-Processing: Employee Data
         # Read data
         employee_skills_df = pd.read_csv(employee_path, index_col="employee_id")
         employee_skills_df.drop(columns=["No", "Role"], inplace=True, errors="ignore")
@@ -73,16 +86,14 @@ def s1_data_structure_CA(employee_path, task_path):
         employees = employee_skills_df.index.tolist()
         skills_name = employee_skills_df.columns[1:].tolist()
 
-        """## 1.2. Pre-Processing: Task Data"""
-
+        # 1.2. Pre-Processing: Task Data
         task_df = pd.read_csv(task_path, index_col="task_id")
 
         tasks = task_df.index.tolist()
         company_names = list(set(task_df["project_id"]))
         story_points = task_df["story_points"].to_dict()
 
-        """## 1.3. Group the task data by company/project"""
-
+        # 1.3. Group the task data by company/project
         # convert to dictionary each company and its task
         company_tasks = {}
 
@@ -94,31 +105,27 @@ def s1_data_structure_CA(employee_path, task_path):
         # sort the company tasks from C1 to C5
         company_tasks = dict(sorted(company_tasks.items()))
 
-        """## 1.4. Pre-Processing: Competency Assessment
-
+        """
+        # 1.4. Pre-Processing: Competency Assessment
         First, create RCD-ACD Dataframe that we get from Task Dataframe for RCD and from Employee Dataframe for ACD.
-
-        ### 1.4.1 Required Competence Data
+        
+        # 1.4.1 Required Competence Data
         """
 
         rcd_df = task_df.drop(columns=["project_id", "story_points"])
         rcd_df = rcd_df.fillna(0)
 
-        """### 1.4.2 Acquired Competence Data"""
-
+        # 1.4.2 Acquired Competence Data
         # create a copy of the original DataFrame
         acd_df = employee_skills_df.copy()
         acd_df = acd_df.fillna(0)
 
-        """### 1.4.3 Fit the Data"""
-
+        # 1.4.3 Fit the Data
         ca = CompetencyAssessment(rcd_df, acd_df)
         qs, info = ca.fit()
 
-        """### 1.4.4 Qualification Space"""
-
-        """### 1.4.5 Sorted MSG Score for All Tasks"""
-
+        # 1.4.4 Qualification Space
+        # 1.4.5 Sorted MSG Score for All Tasks
         score = ca.rank_MSG(qs)
         score_df = pd.DataFrame.from_dict(score, orient="index")
 
@@ -134,7 +141,18 @@ def s1_data_structure_CA(employee_path, task_path):
 
 
 def s2_construct_model(license_params):
-    """# 2. Construct the Model"""
+    """
+    Constructs the optimization model.
+
+    Args:
+        license_params (Dict[str, Any]): The Gurobi license parameters.
+
+    Returns:
+        Model: The constructed optimization model.
+
+    Example:
+        model = s2_construct_model(license_params)
+    """
 
     try:
         # Create an environment with WLS license
@@ -159,11 +177,23 @@ def s2_construct_model(license_params):
 
 
 def s3_decision_variable(model, tasks, employees, company_tasks):
-    """# 3. Build the Decision Variable"""
+    """
+    Builds the decision variables for the optimization model.
+
+    Args:
+        model (Model): The optimization model.
+        tasks (List[int]): List of task IDs.
+        employees (List[str]): List of employee IDs.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+
+    Returns:
+        Tuple: Contains decision variables x, y, z, max_employee_workload, and max_workload.
+
+    Example:
+        x, y, z, max_employee_workload, max_workload = s3_decision_variable(model, tasks, employees, company_tasks)
+    """
 
     try:
-        # Create decision variables for x and y
-
         # Decision variable x to represent employee j is assigned to task i in project k
         x = {}
         for k, task in company_tasks.items():
@@ -200,15 +230,28 @@ def s3_decision_variable(model, tasks, employees, company_tasks):
 
 
 def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload):
-    """# 4. Subject to the Constraints"""
+    """
+    Adds constraints to the optimization model.
+
+    Args:
+        model (Model): The optimization model.
+        x (Dict[Tuple[int, str, str], Any]): Decision variable x.
+        y (Dict[Tuple[str, str], Any]): Decision variable y.
+        z (Dict[Tuple[int, str], Any]): Decision variable z.
+        employees (List[str]): List of employee IDs.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        story_points (Dict[int, int]): Dictionary of story points for each task.
+        max_workload (Any): Decision variable for maximum workload.
+
+    Example:
+        s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload)
+    """
 
     try:
         # constraint 1: each task assigned to one talent
         for k, task in company_tasks.items():
             for i in task:
                 model.addConstr(quicksum(x[(i, j, k)] for j in employees) == 1)
-
-        """## 4.2. Constraint 2: Each employee works for one company at a time"""
 
         # pre-processing constraint 2
         for j in employees:
@@ -227,16 +270,13 @@ def s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_wo
             # The sum of y[j][k] for all companies (k) should be <= 1
             model.addConstr(quicksum(y[(j, k)] for k in company_tasks.keys()) <= 1)
 
-        """## 4.3. Constraint 3: Employee workload doesn't exceed the capacity"""
-
+        # Constraint 3: Employee workload doesn't exceed the capacity
         for j in employees:
             for k, tasks in company_tasks.items():
                 model.addConstr(
                     quicksum(story_points[i] * x[(i, j, k)] for i in tasks)
                     <= max_workload
                 )
-
-        """## 4.4 Constraint 4: Maximum workload is greater than or equal to the workload of each employee For Objective 3"""
 
         # constraint 4: max_workload is greater than or equal to the workload of each employee
         for j in employees:
@@ -274,26 +314,40 @@ def s5_objective1(
     max_employee_workload,
     mu_Z_star,
 ):
-    """# 5. Single Objective Approach: 1) Minimize The Idle Employee"""
+    """
+    Sets the first objective to minimize the number of idle employees and solves the model.
+
+    Args:
+        model (Model): The optimization model.
+        employees (List[str]): List of employee IDs.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        y (Dict[Tuple[str, str], Any]): Decision variable y.
+        score (List[List[float]]): List of metric scores for each employee-task pair.
+        story_points (Dict[int, int]): List of story points for each task.
+        max_employee_workload (int): The maximum workload an employee can handle.
+        mu_Z_star (Dict[int, float]): Dictionary to store objective values.
+
+    Returns:
+        Tuple: Contains objective value, updated mu_Z_star, and assessment score.
+
+    Example:
+        mu_Z_1, mu_Z_star, assessment_score_1 = s5_objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star)
+    """
+
     try:
-        # objective 1
+        # single objective 1
         idle = []
 
         for j in employees:
             idle.append(1 - quicksum(y[j, k] for k in company_tasks.keys()))
 
         mu_Z_1 = quicksum(idle)
-
-        # single objective 1
         model.setObjective(mu_Z_1, GRB.MINIMIZE)
-
-        """## 5.2. Solve The Model of Objective $(1)$"""
 
         # solve the model
         model.optimize()
 
-        """### 5.2.1 Print The Solver Results"""
-
+        # 5.2.1 Print The Solver Results
         # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
@@ -311,8 +365,7 @@ def s5_objective1(
             print("No Solution Found!")
             x_hat_1 = {}
 
-        """## 5.3. Show the Solver's Result"""
-
+        # 5.3. Show the Solver's Result
         # Set display options
         pd.set_option("display.max_rows", 500)
         pd.set_option("display.max_columns", 500)
@@ -332,8 +385,7 @@ def s5_objective1(
         result_1.index.name = "employee"
         result_1.to_csv("./output/result_1.csv")
 
-        """### 5.3.1 Statistics of The Objective"""
-
+        # 5.3.1 Statistics of The Objective
         total_employee = len(employees)
         total_sp = sum(story_points.values())
         total_active_employee = len(set(employee for employee in x_hat_1.keys()))
@@ -356,8 +408,7 @@ def s5_objective1(
             f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
         )
 
-        """### 5.3.2. Distribution With Respect to the Assessment Score"""
-
+        # 5.3.2. Distribution With Respect to the Assessment Score
         # timer for auto close plot
         timer = threading.Timer(3, close_plot)
         timer.start()
@@ -392,27 +443,40 @@ def s6_objective2(
     max_employee_workload,
     mu_Z_star,
 ):
-    """# 6. Single Objective Approach: 2) Maximize The Assessment Score"""
+    """
+    Sets the second objective to maximize the assessment score and solves the model.
+
+    Args:
+        model (Model): The optimization model.
+        employees (List[str]): List of employee IDs.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        z (Dict[Tuple[int, str], Any]): Decision variable z.
+        score (List[List[float]]): List of metric scores for each employee-task pair.
+        story_points (Dict[int, int]): List of story points for each task.
+        max_employee_workload (int): The maximum workload an employee can handle.
+        mu_Z_star (Dict[int, float]): Dictionary to store objective values.
+
+    Returns:
+        Tuple: Contains objective value, updated mu_Z_star, and assessment score.
+
+    Example:
+        mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star)
+    """
 
     try:
-        # objective 2
+        # single objective 2
         mu_Z_2 = quicksum(
             score[j][i] * z[i, j]
             for k, tasks in company_tasks.items()
             for i in tasks
             for j in employees
         )
-
-        # single objective 2
         model.setObjective(mu_Z_2, GRB.MAXIMIZE)
-
-        """## 6.2. Solve The Model of Objective $(2)$"""
 
         # solve the model
         model.optimize()
 
-        """### 6.2.1 Print The Solver Results"""
-
+        # 6.2.1 Print The Solver Results
         # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
@@ -430,8 +494,7 @@ def s6_objective2(
             print("No Solution Found!")
             x_hat_2 = {}
 
-        """## 6.3. Show the Solver's Result"""
-
+        # 6.3. Show the Solver's Result
         # Set display options
         pd.set_option("display.max_rows", 500)
         pd.set_option("display.max_columns", 500)
@@ -451,8 +514,7 @@ def s6_objective2(
         result_2.index.name = "employee"
         result_2.to_csv("./output/result_2.csv")
 
-        """### 6.3.1 Statistics of The Objective"""
-
+        # 6.3.1 Statistics of The Objective
         total_employee = len(employees)
         total_sp = sum(story_points.values())
         total_active_employee = len(set(employee for employee in x_hat_2.keys()))
@@ -475,8 +537,7 @@ def s6_objective2(
             f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
         )
 
-        """### 6.3.2. Distribution With Respect to the Assessment Score"""
-
+        # 6.3.2. Distribution With Respect to the Assessment Score
         # timer for auto close plot
         timer = threading.Timer(3, close_plot)
         timer.start()
@@ -511,20 +572,35 @@ def s7_objective3(
     max_workload,
     mu_Z_star,
 ):
-    """# 7. Single Objective Approach: 3) Balancing Workload For Each Employee"""
+    """
+    Sets the third objective to balance the workload for each employee and solves the model.
+
+    Args:
+        model (Model): The optimization model.
+        employees (List[str]): List of employee IDs.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        score (List[List[float]]): List of metric scores for each employee-task pair.
+        story_points (Dict[int, int]): List of story points for each task.
+        max_employee_workload (int): The maximum workload an employee can handle.
+        max_workload (Any): Decision variable for maximum workload.
+        mu_Z_star (Dict[int, float]): Dictionary to store objective values.
+
+    Returns:
+        Tuple: Contains objective value, updated mu_Z_star, and assessment score.
+
+    Example:
+        mu_Z_3, mu_Z_star, assessment_score_3 = s7_objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star)
+    """
 
     try:
         # single objective 3
         mu_Z_3 = max_workload
         model.setObjective(mu_Z_3, GRB.MINIMIZE)
 
-        """## 7.2. Solve The Model of Objective $(3)$"""
-
         # solve the model
         model.optimize()
 
-        """### 7.2.1 Print The Solver Results"""
-
+        # 7.2.1 Print The Solver Results
         # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
@@ -544,8 +620,7 @@ def s7_objective3(
             print("No Solution Found!")
             x_hat_3 = {}
 
-        """## 7.3. Show the Solver's Result"""
-
+        # 7.3. Show the Solver's Result
         # Set display options
         pd.set_option("display.max_rows", 500)
         pd.set_option("display.max_columns", 500)
@@ -566,8 +641,7 @@ def s7_objective3(
 
         result_3.to_csv("./output/result_3.csv")
 
-        """### 7.3.1 Statistics of The Objective"""
-
+        # 7.3.1 Statistics of The Objective
         total_employee = len(employees)
         total_sp = sum(story_points.values())
         total_active_employee = len(set(employee for employee in x_hat_3.keys()))
@@ -590,8 +664,7 @@ def s7_objective3(
             f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
         )
 
-        """### 7.3.2. Distribution With Respect to the Assessment Score"""
-
+        # 7.3.2. Distribution With Respect to the Assessment Score
         # timer for auto close plot
         timer = threading.Timer(3, close_plot)
         timer.start()
@@ -631,7 +704,30 @@ def s8_MOO(
     assessment_score_2,
     assessment_score_3,
 ):
-    """# 8. Multi-Objective Approach: 2) Goal Programming Optimization Method"""
+    """
+    Sets the multi-objective approach using the Goal Programming Optimization Method and solves the model.
+
+    Args:
+        model (Model): The optimization model.
+        employees (List[str]): List of employee IDs.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        score (List[List[float]]): List of metric scores for each employee-task pair.
+        story_points (Dict[int, int]): List of story points for each task.
+        max_employee_workload (int): The maximum workload an employee can handle.
+        mu_Z_1 (Any): Objective value for the first objective.
+        mu_Z_2 (Any): Objective value for the second objective.
+        mu_Z_3 (Any): Objective value for the third objective.
+        mu_Z_star (Dict[int, float]): Dictionary to store objective values.
+        assessment_score_1 (Any): Assessment score for the first objective.
+        assessment_score_2 (Any): Assessment score for the second objective.
+        assessment_score_3 (Any): Assessment score for the third objective.
+
+    Returns:
+        Any: Assessment score for the multi-objective approach.
+
+    Example:
+        assessment_score_4 = s8_MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z_1, mu_Z_2, mu_Z_3, mu_Z_star, assessment_score_1, assessment_score_2, assessment_score_3)
+    """
 
     try:
         # define weight dictionary for each objective
@@ -680,15 +776,14 @@ def s8_MOO(
         # Minimize D
         model.setObjective(D, GRB.MINIMIZE)
 
-        ## 8.2. Solve The Model
+        # 8.2. Solve The Model
         gap_callback = GapCallback()
         model.setParam("MIPGap", MIPGap_moo)
 
         # Solve the model
         model.optimize(gap_callback)
 
-        ## 8.3. Print The Solver Results
-
+        # 8.3. Print The Solver Results
         # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
@@ -705,8 +800,7 @@ def s8_MOO(
             print("No Solution Found!")
             x_hat_4 = {}
 
-        ## 8.4. Show the Solver's Result
-
+        # 8.4. Show the Solver's Result
         # Show data that has positive metrics score
         result_4 = pd.DataFrame.from_dict(
             x_hat_4,
@@ -723,8 +817,7 @@ def s8_MOO(
         result_4.index.name = "employee"
         result_4.to_csv("./output/result_4_MOO.csv")
 
-        ## 8.5. Statistics of The Objective
-
+        # 8.5. Statistics of The Objective
         total_employee = len(employees)
         total_sp = sum(story_points.values())
         total_active_employee = len(set(employee for employee in x_hat_4.keys()))
@@ -747,8 +840,7 @@ def s8_MOO(
             f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
         )
 
-        ## 8.6. Distribution With Respect to the Assessment Score
-
+        # 8.6. Distribution With Respect to the Assessment Score
         # Timer for auto close plot
         timer = threading.Timer(3, close_plot)
         timer.start()
@@ -765,8 +857,7 @@ def s8_MOO(
         else:
             print("No data to show")
 
-        ## 8.7. Comparing MOO Method 2 to Single Objective and MOO Method 1
-
+        # 8.7. Comparing MOO Method 2 to Single Objective and MOO Method 1
         # Timer for auto close plot
         timer = threading.Timer(3, close_plot)
         timer.start()
@@ -1080,8 +1171,8 @@ def main():
 
     try:
         # Section 1
-        employees, tasks, story_points, company_tasks, score, info = (
-            s1_data_structure_CA(employee_path, task_path)
+        employees, tasks, story_points, company_tasks, score, info = s1_data_structure(
+            employee_path, task_path
         )
         section_1_msg_1 = "Section 1: Data Structure Run Successfully"
         print(section_1_msg_1)
