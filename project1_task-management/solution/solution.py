@@ -65,7 +65,7 @@ load_dotenv()
 
 def s1_data_structure(employee_path: str, task_path: str, overqualification: bool) -> Tuple[
     List[str],
-    List[int],
+    List[str],
     Dict[int, int],
     Dict[str, List[int]],
     Dict[int, Dict[int, float]],
@@ -189,7 +189,18 @@ def s2_construct_model(license_params: Dict[str, Any]) -> Model:
         return model
 
 
-def s3_decision_variable(model, tasks, employees, company_tasks):
+def s3_decision_variable(
+    model: Model,
+    tasks: List[str],
+    employees: List[str],
+    company_tasks: Dict[str, List[int]],
+) -> Tuple[
+    Dict[Tuple[int, str, str], Any],
+    Dict[Tuple[str, str], Any],
+    Dict[Tuple[int, str], Any],
+    int,
+    Any,
+]:
     """
     Builds the decision variables for the optimization model.
 
