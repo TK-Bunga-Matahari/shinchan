@@ -53,7 +53,7 @@ import pandas as pd
 import gurobipy as gp
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 from gurobipy import GRB, Model, quicksum
 from yippy import CompetencyAssessment
 
@@ -62,9 +62,16 @@ from yippy import CompetencyAssessment
 load_dotenv()
 
 
-def s1_data_structure(employee_path, task_path):
+def s1_data_structure(employee_path: str, task_path: str) -> Tuple[
+    List[str],
+    List[int],
+    Dict[int, int],
+    Dict[str, List[int]],
+    Dict[int, Dict[int, float]],
+    Dict[str, Any],
+]:
     """
-    Sets up the data structure by processing employee and task data.
+    Sets up the data structure by processing employee, task data, and calculate skills metric score.
 
     Args:
         employee_path (str): The path to the employee data CSV file.
@@ -137,7 +144,7 @@ def s1_data_structure(employee_path, task_path):
     except Exception as e:
         send_discord_notification(f"An error occured in s1_data_structure_CA: {e}")
         print(f"An error occurred in s1_data_structure_CA: {e}")
-        return [], [], [], {}, {}, {}
+        return [], [], {}, {}, {}, {}
 
 
 def s2_construct_model(license_params):
