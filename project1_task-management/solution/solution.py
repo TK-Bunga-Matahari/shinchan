@@ -1058,6 +1058,10 @@ max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
 
 
 def main():
+    """
+    The main function that executes the steps for the task assignment optimization problem.
+    """
+
     header = """
     ==============================================
 
@@ -1068,37 +1072,25 @@ def main():
     print(header)
 
     header_msg = (
-        f"Task Assignment Optimization Problem: START with Competence Assessment"
+        "Task Assignment Optimization Problem: START with Competence Assessment"
     )
     send_discord_notification(header_msg)
 
-    """
-    =============================================
-    
-                Execute the Steps
-    
-    =============================================
-    """
+    print("\nExecuting the Steps...\n\n")
 
     try:
         # Section 1
-        (
-            employees,
-            tasks,
-            story_points,
-            company_tasks,
-            score,
-            info,
-        ) = s1_data_structure_CA(employee_path, task_path)
-
-        section_1_msg_1 = f"Section 1: Data Structure Run Successfully"
+        employees, tasks, story_points, company_tasks, score, info = (
+            s1_data_structure_CA(employee_path, task_path)
+        )
+        section_1_msg_1 = "Section 1: Data Structure Run Successfully"
         print(section_1_msg_1)
         send_discord_notification(section_1_msg_1)
 
         # Section 2
         model = s2_construct_model(license_params)
         if model:
-            print(f"Section 2: Construct Model Run Successfully\n\n")
+            print("Section 2: Construct Model Run Successfully\n\n")
             send_discord_notification("Section 2: Construct Model Run Successfully")
         else:
             raise Exception("Model construction failed.")
@@ -1108,7 +1100,7 @@ def main():
             model, tasks, employees, company_tasks
         )
         if x and y and z:
-            print(f"Section 3: Build Decision Variable Run Successfully\n\n")
+            print("Section 3: Build Decision Variable Run Successfully\n\n")
             send_discord_notification(
                 "Section 3: Build Decision Variable Run Successfully"
             )
@@ -1119,16 +1111,10 @@ def main():
         s4_constraint(
             model, x, y, z, employees, company_tasks, story_points, max_workload
         )
-        print(f"Section 4: Set Constraint Run Successfully\n\n")
+        print("Section 4: Set Constraint Run Successfully\n\n")
         send_discord_notification("Section 4: Set Constraint Run Successfully")
 
-        """
-        =============================================
-        
-                    Solve The Objective
-        
-        =============================================
-        """
+        print("\nSolving The Objective...\n\n")
 
         mu_Z_star = {i: 0.00 for i in range(1, 4)}
 
@@ -1149,7 +1135,7 @@ def main():
         duration = (end_time - start_time).seconds
 
         if mu_Z_1 and assessment_score_1 is not None:
-            print(f"Section 5: Objective 1 Run Successfully\n\n")
+            print("Section 5: Objective 1 Run Successfully\n\n")
             send_discord_notification(
                 f"Section 5: Objective 1 Run Successfully with {duration} seconds"
             )
@@ -1177,7 +1163,7 @@ def main():
             send_discord_notification(
                 f"Section 6: Objective 2 Run Successfully with {duration} seconds"
             )
-            print(f"Section 6: Objective 2 Run Successfully\n\n")
+            print("Section 6: Objective 2 Run Successfully\n\n")
         else:
             send_discord_notification("Objective 2 failed.")
             raise Exception("Objective 2 failed.")
@@ -1202,7 +1188,7 @@ def main():
             send_discord_notification(
                 f"Section 7: Objective 3 Run Successfully with {duration} seconds"
             )
-            print(f"Section 7: Objective 3 Run Successfully\n\n")
+            print("Section 7: Objective 3 Run Successfully\n\n")
         else:
             send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
@@ -1231,7 +1217,7 @@ def main():
             send_discord_notification(
                 f"Section 8: MOO Run Successfully with {duration} seconds"
             )
-            print(f"Section 8: MOO Run Successfully\n\n")
+            print("Section 8: MOO Run Successfully\n\n")
         else:
             send_discord_notification("MOO failed.")
             raise Exception("MOO failed.")
