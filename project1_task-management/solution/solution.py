@@ -53,80 +53,13 @@ import pandas as pd
 import gurobipy as gp
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
-from gurobipy import GRB, quicksum
+from typing import Dict, List, Tuple
+from gurobipy import GRB, Model, quicksum
 from yippy import CompetencyAssessment
 
 
 # Load environment variables from .env file
 load_dotenv()
-
-
-# Convert string to boolean
-def str_to_bool(value: str) -> bool:
-    """
-    Convert a string representation of truth to a boolean value.
-
-    This function takes a string and converts it to a boolean. The conversion
-    is case-insensitive and considers the strings "true", "1", and "yes" as
-    True, and all other strings as False.
-
-    Args:
-        value (str): The string to be converted to a boolean. Expected values are
-                     case-insensitive "true", "1", "yes" for True, and anything else for False.
-
-    Returns:
-        bool: The boolean value corresponding to the string representation.
-              Returns True for "true", "1", "yes" (case-insensitive), and False otherwise.
-
-    Examples:
-        >>> str_to_bool("true")
-        True
-        >>> str_to_bool("False")
-        False
-        >>> str_to_bool("YES")
-        True
-        >>> str_to_bool("no")
-        False
-    """
-    return value.lower() in ("true", "1", "yes")
-
-
-# Get License Information from Environment Variables
-wls_access_id = os.getenv("WLSACCESSID")
-wls_secret = os.getenv("WLSSECRET")
-license_id = os.getenv("LICENSEID")
-
-if wls_access_id is None or wls_secret is None or license_id is None:
-    license_params = {}
-else:
-    license_params = {
-        "WLSACCESSID": wls_access_id,
-        "WLSSECRET": wls_secret,
-        "LICENSEID": int(license_id),
-    }
-
-# Optimization Parameters from Environment Variables
-presolve = int(os.getenv("PRESOLVE", 2))
-MIPFocus = int(os.getenv("MIPFOCUS", 1))
-MIPGap = float(os.getenv("MIPGAP", 0.01))
-heuristics = float(os.getenv("HEURISTICS", 0.8))
-threads = int(os.getenv("THREADS", 2))
-MIPGap_moo = float(os.getenv("MIPGAP_MOO", 0.05))
-
-# Objective Weights from Environment Variables
-weight_obj1 = float(os.getenv("WEIGHT_OBJ1", 0.03))
-weight_obj2 = float(os.getenv("WEIGHT_OBJ2", 0.9))
-weight_obj3 = float(os.getenv("WEIGHT_OBJ3", 0.07))
-
-# Methodology from Environment Variables
-overqualification = str_to_bool(os.getenv("OVERQUALIFICATION", "True"))
-
-# File Paths from Environment Variables
-employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
-task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
-
-# Maximum Workload from Environment Variables
-max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
 
 
 def s1_data_structure_CA(employee_path, task_path):
@@ -198,49 +131,6 @@ def s1_data_structure_CA(employee_path, task_path):
         send_discord_notification(f"An error occured in s1_data_structure_CA: {e}")
         print(f"An error occurred in s1_data_structure_CA: {e}")
         return [], [], [], {}, {}, {}
-
-
-"""#### Generic Function"""
-
-
-# Extracting and printing the results
-def get_employee_tasks(
-    j, company_tasks, model, score, story_points, max_employee_workload
-):
-    task = []
-    sim = []
-    comp = []
-    sp = 0
-
-    for k, tasks in company_tasks.items():
-        for i in tasks:
-            if model.getVarByName(f"x_{i}_{j}_{k}").X == 1:
-                print(f"Task {i} assigned to Employee {j}")
-                print(f"Company\t\t\t: {k}")
-                print(f"Story Points\t\t: {story_points[i]}")
-                print(f"Metrics score\t: {score[j][i]:.10f}\n")
-
-                task.append(i)
-                sim.append(score[j][i])
-                comp.append(k)
-                sp += story_points[i]
-
-    wasted_sp = max_employee_workload - sp if sp > 0 else 0
-    return comp, task, sp, wasted_sp, sim
-
-
-# Get the License of Gurobi
-def read_license_file(filepath):
-    params = {}
-    with open(filepath, "r") as file:
-        for line in file:
-            if line.startswith("WLSACCESSID"):
-                params["WLSACCESSID"] = line.split("=")[1].strip()
-            elif line.startswith("WLSSECRET"):
-                params["WLSSECRET"] = line.split("=")[1].strip()
-            elif line.startswith("LICENSEID"):
-                params["LICENSEID"] = int(line.split("=")[1].strip())
-    return params
 
 
 def s2_construct_model(license_params):
@@ -912,10 +802,35 @@ def s8_MOO(
 
 
 class GapCallback:
-    def __init__(self):
+    """
+    A callback class for monitoring and reporting the optimization gap during the Mixed Integer Programming (MIP) solving process.
+
+    Attributes:
+        reported_gaps (set): A set to keep track of the reported gaps to avoid duplicate notifications.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initializes the GapCallback instance with an empty set for reported gaps.
+
+        Example:
+            callback = GapCallback()
+        """
         self.reported_gaps = set()
 
-    def __call__(self, model, where):
+    def __call__(self, model: Model, where: int) -> None:
+        """
+        The callback function that gets called during the MIP solving process. It monitors the optimization gap and sends notifications when certain conditions are met.
+
+        Args:
+            model (gurobipy.Model): The optimization model being solved.
+            where (int): An integer code indicating the point in the solving process when the callback is called.
+
+        Example:
+            model = Model()
+            callback = GapCallback()
+            model.optimize(callback)
+        """
         if where == GRB.Callback.MIP:
             nodecount = model.cbGet(GRB.Callback.MIP_NODCNT)
             if (
@@ -939,22 +854,159 @@ class GapCallback:
                     # Report gap for each integer when gap <= 10
                     elif percentage_gap <= 10:
                         if int(percentage_gap) not in self.reported_gaps:
-                            print(f"Model reached {int(percentage_gap)}% gap.")
+                            print(f"Model reached {percentage_gap}% gap.")
                             send_discord_notification(
-                                f"Model reached {int(percentage_gap) - 1}% gap."
+                                f"Model reached {percentage_gap}% gap."
                             )
                             self.reported_gaps.add(int(percentage_gap))
 
 
-def close_plot():
+# Convert string to boolean
+def str_to_bool(value: str) -> bool:
+    """
+    Convert a string representation of truth to a boolean value.
+
+    This function takes a string and converts it to a boolean. The conversion
+    is case-insensitive and considers the strings "true", "1", and "yes" as
+    True, and all other strings as False.
+
+    Args:
+        value (str): The string to be converted to a boolean. Expected values are
+                     case-insensitive "true", "1", "yes" for True, and anything else for False.
+
+    Returns:
+        bool: The boolean value corresponding to the string representation.
+              Returns True for "true", "1", "yes" (case-insensitive), and False otherwise.
+
+    Examples:
+        >>> str_to_bool("true")
+        True
+        >>> str_to_bool("False")
+        False
+        >>> str_to_bool("YES")
+        True
+        >>> str_to_bool("no")
+        False
+    """
+    return value.lower() in ("true", "1", "yes")
+
+
+def get_employee_tasks(
+    j: int,
+    company_tasks: Dict[str, List[int]],
+    model: Model,
+    score: List[List[float]],
+    story_points: List[int],
+    max_employee_workload: int,
+) -> Tuple[List[str], List[int], int, int, List[float]]:
+    """
+    Extracts and prints the tasks assigned to an employee and computes related metrics.
+
+    Args:
+        j (int): The employee ID.
+        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        model (Model): The optimization model.
+        score (List[List[float]]): List of metric scores for each employee-task pair.
+        story_points (List[int]): List of story points for each task.
+        max_employee_workload (int): The maximum workload an employee can handle.
+
+    Returns:
+        Tuple[List[str], List[int], int, int, List[float]]: A tuple containing:
+            - List of company names (comp)
+            - List of task IDs (task)
+            - Total story points (sp)
+            - Wasted story points (wasted_sp)
+            - List of metric scores (sim)
+
+    Example:
+        company_tasks = {'CompanyA': [1, 2], 'CompanyB': [3]}
+        model = Model()
+        score = [[0.5, 0.7, 0.6], [0.4, 0.8, 0.5]]
+        story_points = [3, 2, 5]
+        max_employee_workload = 10
+        get_employee_tasks(1, company_tasks, model, score, story_points, max_employee_workload)
+    """
+    task = []
+    sim = []
+    comp = []
+    sp = 0
+
+    for k, tasks in company_tasks.items():
+        for i in tasks:
+            var = model.getVarByName(f"x_{i}_{j}_{k}")
+            if var is not None and var.X == 1:
+                print(f"Task {i} assigned to Employee {j}")
+                print(f"Company\t\t\t: {k}")
+                print(f"Story Points\t\t: {story_points[i]}")
+                print(f"Metrics score\t: {score[j][i]:.10f}\n")
+
+                task.append(i)
+                sim.append(score[j][i])
+                comp.append(k)
+                sp += story_points[i]
+
+    wasted_sp = max_employee_workload - sp if sp > 0 else 0
+    return comp, task, sp, wasted_sp, sim
+
+
+def read_license_file(filepath: str) -> Dict[str, str]:
+    """
+    Reads the Gurobi license file and extracts the license parameters.
+
+    Args:
+        filepath (str): The path to the license file.
+
+    Returns:
+        Dict[str, str]: A dictionary containing the license parameters.
+
+    Example:
+        license_params = read_license_file("gurobi.lic")
+    """
+    params = {}
+    with open(filepath, "r") as file:
+        for line in file:
+            if line.startswith("WLSACCESSID"):
+                params["WLSACCESSID"] = line.split("=")[1].strip()
+            elif line.startswith("WLSSECRET"):
+                params["WLSSECRET"] = line.split("=")[1].strip()
+            elif line.startswith("LICENSEID"):
+                params["LICENSEID"] = int(line.split("=")[1].strip())
+    return params
+
+
+def close_plot() -> None:
+    """
+    Closes the current plot.
+
+    Example:
+        close_plot()
+    """
     plt.close()
 
 
-def get_timestamp():
+def get_timestamp() -> str:
+    """
+    Gets the current timestamp in the format (HH.MM DD/MM/YYYY).
+
+    Returns:
+        str: The current timestamp.
+
+    Example:
+        timestamp = get_timestamp()
+    """
     return datetime.datetime.now().strftime("(%H.%M %d/%m/%Y)")
 
 
-def send_discord_notification(message):
+def send_discord_notification(message: str) -> None:
+    """
+    Sends a notification with the given message to a Discord channel.
+
+    Args:
+        message (str): The message to be sent.
+
+    Example:
+        send_discord_notification("Model reached 5% gap.")
+    """
     url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
     data = {"content": f"{get_timestamp()} {message}"}
     # response = requests.post(
@@ -965,6 +1017,44 @@ def send_discord_notification(message):
     #     print("Notification sent successfully.")
     # else:
     #     print("Failed to send notification.")
+
+
+# Get License Information from Environment Variables
+wls_access_id = os.getenv("WLSACCESSID")
+wls_secret = os.getenv("WLSSECRET")
+license_id = os.getenv("LICENSEID")
+
+if wls_access_id is None or wls_secret is None or license_id is None:
+    license_params = {}
+else:
+    license_params = {
+        "WLSACCESSID": wls_access_id,
+        "WLSSECRET": wls_secret,
+        "LICENSEID": int(license_id),
+    }
+
+# Optimization Parameters from Environment Variables
+presolve = int(os.getenv("PRESOLVE", 2))
+MIPFocus = int(os.getenv("MIPFOCUS", 1))
+MIPGap = float(os.getenv("MIPGAP", 0.01))
+heuristics = float(os.getenv("HEURISTICS", 0.8))
+threads = int(os.getenv("THREADS", 2))
+MIPGap_moo = float(os.getenv("MIPGAP_MOO", 0.05))
+
+# Objective Weights from Environment Variables
+weight_obj1 = float(os.getenv("WEIGHT_OBJ1", 0.03))
+weight_obj2 = float(os.getenv("WEIGHT_OBJ2", 0.9))
+weight_obj3 = float(os.getenv("WEIGHT_OBJ3", 0.07))
+
+# Methodology from Environment Variables
+overqualification = str_to_bool(os.getenv("OVERQUALIFICATION", "True"))
+
+# File Paths from Environment Variables
+employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
+task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
+
+# Maximum Workload from Environment Variables
+max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
 
 
 def main():
