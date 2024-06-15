@@ -1,5 +1,6 @@
 """
-Module Name: Task Assignment Optimization Problem Solution
+Module Name: solution.py
+Obective: Task Assignment Optimization Problem Solution
 
 Description:
 This module contains the solution for the Task Assignment Optimization Problem.
@@ -64,12 +65,12 @@ load_dotenv()
 
 
 def s1_data_structure(employee_path: str, task_path: str, overqualification: bool) -> Tuple[
-    List[str],
-    List[str],
-    Dict[int, int],
-    Dict[str, List[int]],
-    Dict[int, Dict[int, float]],
-    Dict[str, Any],
+    List[str], # employees
+    List[str], # tasks
+    Dict[str, int], # story_points
+    Dict[str, List[str]], # company_tasks
+    Dict[str, Dict[str, float]], # score
+    Dict[str, Any], # info
 ]:
     """
     Sets up the data structure by processing employee, task data, and calculate skills metric score.
@@ -77,6 +78,7 @@ def s1_data_structure(employee_path: str, task_path: str, overqualification: boo
     Args:
         employee_path (str): The path to the employee data CSV file.
         task_path (str): The path to the task data CSV file.
+        overqualification (bool): Flag to choice skills metric methodhology.
 
     Returns:
         Tuple: Contains employees, tasks, story_points, company_tasks, score, and info.
@@ -193,11 +195,11 @@ def s3_decision_variable(
     model: Model,
     tasks: List[str],
     employees: List[str],
-    company_tasks: Dict[str, List[int]],
+    company_tasks: Dict[str, List[str]],
 ) -> Tuple[
-    Dict[Tuple[int, str, str], Any],
+    Dict[Tuple[str, str, str], Any],
     Dict[Tuple[str, str], Any],
-    Dict[Tuple[int, str], Any],
+    Dict[Tuple[str, str], Any],
     int,
     Any,
 ]:
@@ -211,7 +213,7 @@ def s3_decision_variable(
         company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
 
     Returns:
-        Tuple: Contains decision variables x, y, z, max_employee_workload, and max_workload.
+        Tuple: Contains decision variables x, y, z, max_employee_workload, and max_workload variable.
 
     Example:
         x, y, z, max_employee_workload, max_workload = s3_decision_variable(model, tasks, employees, company_tasks)
@@ -255,12 +257,12 @@ def s3_decision_variable(
 
 def s4_constraint(
     model: Model,
-    x: Dict[Tuple[int, str, str], Any],
+    x: Dict[Tuple[str, str, str], Any],
     y: Dict[Tuple[str, str], Any],
-    z: Dict[Tuple[int, str], Any],
+    z: Dict[Tuple[str, str], Any],
     employees: List[str],
-    company_tasks: Dict[str, List[int]],
-    story_points: Dict[int, int],
+    company_tasks: Dict[str, List[str]],
+    story_points: Dict[str, int],
     max_workload: int,
 ) -> None:
     """
@@ -338,25 +340,25 @@ def s4_constraint(
 
 
 def s5_objective1(
-    model,
-    employees,
-    company_tasks,
-    y,
-    score,
-    story_points,
-    max_employee_workload,
-    mu_Z_star,
-):
+    model: Model,
+    employees: List[str],
+    company_tasks: Dict[str, List[str]],
+    y: Dict[Tuple[str, str], Any],
+    score: Dict[str, Dict[str, float]],
+    story_points: Dict[str, int],
+    max_employee_workload: int,
+    mu_Z_star: Dict[int, float],
+) -> Tuple[Any, Dict[int, float], pd.Series]:
     """
     Sets the first objective to minimize the number of idle employees and solves the model.
 
     Args:
         model (Model): The optimization model.
         employees (List[str]): List of employee IDs.
-        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        company_tasks (Dict[str, List[str]]): Dictionary of company tasks.
         y (Dict[Tuple[str, str], Any]): Decision variable y.
-        score (List[List[float]]): List of metric scores for each employee-task pair.
-        story_points (Dict[int, int]): List of story points for each task.
+        score (Dict[str, Dict[str, float]]): Dictionary of metric scores for each employee-task pair.
+        story_points (Dict[str, int]): Dictionary of story points for each task.
         max_employee_workload (int): The maximum workload an employee can handle.
         mu_Z_star (Dict[int, float]): Dictionary to store objective values.
 
@@ -369,7 +371,7 @@ def s5_objective1(
 
     try:
         # single objective 1
-        idle = []
+        idle = []        
 
         for j in employees:
             idle.append(1 - quicksum(y[j, k] for k in company_tasks.keys()))
@@ -463,29 +465,29 @@ def s5_objective1(
     except Exception as e:
         send_discord_notification(f"An error occured in s5_objective1: {e}")
         print(f"An error occurred in s5_objective1: {e}")
-        return None, None, None
+        return None, mu_Z_star, pd.Series()
 
 
 def s6_objective2(
-    model,
-    employees,
-    company_tasks,
-    z,
-    score,
-    story_points,
-    max_employee_workload,
-    mu_Z_star,
-):
+    model: Model,
+    employees: List[str],
+    company_tasks: Dict[str, List[str]],
+    z: Dict[Tuple[str, str], Any],
+    score: Dict[str, Dict[str, float]],
+    story_points: Dict[str, int],
+    max_employee_workload: int,
+    mu_Z_star: Dict[int, float],
+) -> Tuple[Any, Dict[int, float], pd.Series]:
     """
     Sets the second objective to maximize the assessment score and solves the model.
 
     Args:
         model (Model): The optimization model.
         employees (List[str]): List of employee IDs.
-        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
-        z (Dict[Tuple[int, str], Any]): Decision variable z.
-        score (List[List[float]]): List of metric scores for each employee-task pair.
-        story_points (Dict[int, int]): List of story points for each task.
+        company_tasks (Dict[str, List[str]]): Dictionary of company tasks.
+        z (Dict[Tuple[str, str], Any]): Decision variable z.
+        score (Dict[str, Dict[str, float]]): List of metric scores for each employee-task pair.
+        story_points (Dict[str, int]): List of story points for each task.
         max_employee_workload (int): The maximum workload an employee can handle.
         mu_Z_star (Dict[int, float]): Dictionary to store objective values.
 
@@ -592,28 +594,28 @@ def s6_objective2(
     except Exception as e:
         send_discord_notification(f"An error occured in s6_objective2: {e}")
         print(f"An error occurred in s6_objective2: {e}")
-        return None, None, None
+        return None, mu_Z_star, pd.Series()
 
 
 def s7_objective3(
-    model,
-    employees,
-    company_tasks,
-    score,
-    story_points,
-    max_employee_workload,
-    max_workload,
-    mu_Z_star,
-):
+    model: Model,
+    employees: List[str],
+    company_tasks: Dict[str, List[str]],
+    score: Dict[str, Dict[str, float]],
+    story_points: Dict[str, int],
+    max_employee_workload: int,
+    max_workload: Any,
+    mu_Z_star: Dict[int, float]
+) -> Tuple[Any, Dict[int, float], pd.Series]:
     """
     Sets the third objective to balance the workload for each employee and solves the model.
 
     Args:
         model (Model): The optimization model.
         employees (List[str]): List of employee IDs.
-        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
-        score (List[List[float]]): List of metric scores for each employee-task pair.
-        story_points (Dict[int, int]): List of story points for each task.
+        company_tasks (Dict[str, List[str]]): Dictionary of company tasks.
+        score (Dict[str, Dict[str, float]]): List of metric scores for each employee-task pair.
+        story_points (Dict[str, int]): List of story points for each task.
         max_employee_workload (int): The maximum workload an employee can handle.
         max_workload (Any): Decision variable for maximum workload.
         mu_Z_star (Dict[int, float]): Dictionary to store objective values.
@@ -719,24 +721,24 @@ def s7_objective3(
     except Exception as e:
         send_discord_notification(f"An error occured in s7_objective3: {e}")
         print(f"An error occurred in s7_objective3: {e}")
-        return None, None, None
+        return None, mu_Z_star, pd.Series()
 
 
 def s8_MOO(
-    model,
-    employees,
-    company_tasks,
-    score,
-    story_points,
-    max_employee_workload,
-    mu_Z_1,
-    mu_Z_2,
-    mu_Z_3,
-    mu_Z_star,
-    assessment_score_1,
-    assessment_score_2,
-    assessment_score_3,
-):
+    model: Model,
+    employees: List[str],
+    company_tasks: Dict[str, List[str]],
+    score: Dict[str, Dict[str, float]],
+    story_points: Dict[str, int],
+    max_employee_workload: int,
+    mu_Z_1: Any,
+    mu_Z_2: Any,
+    mu_Z_3: Any,
+    mu_Z_star: Dict[int, float],
+    assessment_score_1: Any,
+    assessment_score_2: Any,
+    assessment_score_3: Any,
+) -> Any:
     """
     Sets the multi-objective approach using the Goal Programming Optimization Method and solves the model.
 
@@ -923,6 +925,8 @@ def s8_MOO(
     except Exception as e:
         send_discord_notification(f"An error occured in s8_MOO: {e}")
         print(f"An error occurred in s8_MOO: {e}")
+        
+        return pd.Series()
 
 
 class GapCallback:
@@ -1016,13 +1020,13 @@ def str_to_bool(value: str) -> bool:
 
 
 def get_employee_tasks(
-    j: int,
-    company_tasks: Dict[str, List[int]],
+    j: str,
+    company_tasks: Dict[str, List[str]],
     model: Model,
-    score: List[List[float]],
-    story_points: List[int],
+    score: Dict[str, Dict[str, float]],
+    story_points: Dict[str, int],
     max_employee_workload: int,
-) -> Tuple[List[str], List[int], int, int, List[float]]:
+) -> Tuple[List[str], List[str], int, int, List[float]]:
     """
     Extracts and prints the tasks assigned to an employee and computes related metrics.
 
