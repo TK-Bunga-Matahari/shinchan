@@ -780,7 +780,7 @@ def data_visualization():
 
         plt.figure(figsize=(10, 5))
         plt.boxplot([similarity_score1, similarity_score2, similarity_score3, similarity_score_moo],
-                    labels=['Objective 1', 'Objective 2', 'Objective 3', 'MOO'])
+                    label=['Objective 1', 'Objective 2', 'Objective 3', 'MOO'])
         plt.title('Similarity Score Boxplot')
         plt.savefig("./output/similarity_all.png")
         plt.show()
@@ -798,7 +798,7 @@ def data_visualization():
 
         plt.figure(figsize=(10, 5))
         plt.boxplot([workload_1, workload_2, workload_3, workload_moo],
-                    labels=['Objective 1', 'Objective 2', 'Objective 3', 'MOO'])
+                    label=['Objective 1', 'Objective 2', 'Objective 3', 'MOO'])
         plt.title('Workload Balancing Boxplot')
         plt.savefig("./output/workload_all.png")
         plt.show()
@@ -898,7 +898,7 @@ def data_visualization_compare():
         # Boxplot for similarity scores
         plt.figure(figsize=(10, 5))
         plt.boxplot([similarity_score1, similarity_score2, similarity_score3, similarity_score_moo],
-                    labels=['Obj1 - WED','Obj2 - WED', 'Obj3 - WED', 'MOO - WED'])
+                    label=['Obj1 - WED','Obj2 - WED', 'Obj3 - WED', 'MOO - WED'])
         plt.title('Similarity Score Boxplot')
         plt.savefig("./output/similarity_all.png")
         plt.show()
@@ -915,7 +915,7 @@ def data_visualization_compare():
         # plt.boxplot([workload_1, workload1, workload_2, workload2, workload_3, workload3, workload_moo, workloadmoo],
         #                     labels=['Obj1 - CA', 'Obj1 - WED', 'Obj2 - CA', 'Obj2 - WED', 'Obj3 - CA', 'Obj3 - WED', 'MOO - CA', 'MOO - WED'])
         plt.boxplot([workload_1, workload_2, workload_3, workload_moo],
-                    labels=['Obj1 - WED', 'Obj2 - WED', 'Obj3 - WED', 'MOO - WED'])
+                    label=['Obj1 - WED', 'Obj2 - WED', 'Obj3 - WED', 'MOO - WED'])
         plt.title('Workload Boxplot')
         plt.savefig("./output/workload_all.png")
         plt.show()
