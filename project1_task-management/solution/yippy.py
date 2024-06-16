@@ -1,12 +1,16 @@
 """
 Module Name: yippy.py
-Objective: Implement the CompetencyAssessment class to calculate the MSG score for each employee and rank them based on their scores.
+Objective: Implement the CompetencyAssessment and WeightedEuclideanDistance classes to calculate MSG scores for each employee and rank them based on their scores.
 
 Description:
-This module provides the CompetencyAssessment class which is used to assess the competencies of employees against the required competencies for various tasks. 
-It calculates the weighted scores, identifies gaps between required and actual competencies, and ranks employees based on their Mean Skill Gap (MSG) scores.
+This module provides the CompetencyAssessment and WeightedEuclideanDistance classes which are used to assess the competencies of employees against the required competencies for various tasks. They calculate the weighted scores, identify gaps between required and actual competencies, and rank employees based on their Mean Skill Gap (MSG) scores or Weighted Euclidean Distance.
+
+Classes:
+- CompetencyAssessment: A class to assess the competencies of employees against required competencies for tasks using MSG scores.
+- WeightedEuclideanDistance: A class to assess the competencies of employees against required competencies for tasks using Weighted Euclidean Distance.
 
 Functions:
+CompetencyAssessment:
 - __init__(self, rcd_df: pd.DataFrame, acd_df: pd.DataFrame) -> None: Initializes the CompetencyAssessment class with required (task) and actual (employee) competency data.
 - fit(self) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, Any]]: Fits the model by calculating weights, applying them, computing gaps, applying to Qualification Space, and calculating scores.
 - calculate_poc_weight(self) -> Dict[str, Dict[str, float]]: Calculates the weight or priority of each competency for each task.
@@ -18,11 +22,16 @@ Functions:
 - top_n_score(self, score: Dict[str, Dict[str, float]], n: float) -> Dict[str, Dict[str, float]]: Selects the top-n% tasks for each employee based on their scores.
 - top_score(self, score: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]: Assigns unique estimated tasks to employees based on their highest scores.
 
-Classes:
-- CompetencyAssessment: A class to assess the competencies of employees against required competencies for tasks.
+WeightedEuclideanDistance:
+- __init__(self, rcd_df: pd.DataFrame, acd_df: pd.DataFrame) -> None: Initializes the WeightedEuclideanDistance class with required (task) and actual (employee) competency data.
+- fit(self) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Any]]: Fits the model to the data and computes the scores and information.
+- calculate_weight(self, employee: pd.Series, task: pd.Series, alpha: float = 0.5) -> Tuple[pd.Series, np.ndarray]: Calculates the difference and weight between employee and task competencies.
+- calculate_wed(self, diff: pd.Series, weight: np.ndarray) -> Tuple[float, float]: Calculates the weighted Euclidean distance and normalizes the score.
+- apply_wed(self) -> Tuple[Dict[str, Dict[str, float]], Any]: Applies the weighted Euclidean distance calculation to all employees and tasks.
+- rank_wed(self, score: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]: Ranks the tasks for each employee based on the scores.
 
 Usage:
-The CompetencyAssessment class can be used to fit a model based on provided required and actual competency data, calculate the gaps, rank employees based on their competencies, and select top-n% tasks or assign tasks uniquely to employees.
+The CompetencyAssessment and WeightedEuclideanDistance classes can be used to fit models based on provided required and actual competency data, calculate the gaps, rank employees based on their competencies, and select top-n% tasks or assign tasks uniquely to employees.
 
 Example:
 >>> rcd_df = pd.DataFrame({
@@ -45,6 +54,8 @@ Example:
 >>> score, info = ca.fit()
 >>> top_20_score = ca.top_n_score(score, 20)
 >>> top_score = ca.top_score(score)
+>>> wed = WeightedEuclideanDistance(rcd_df, acd_df)
+>>> score, info = wed.fit()
 
 Author:
 TK Bunga Matahari Team
@@ -404,20 +415,73 @@ class CompetencyAssessment:
 class WeightedEuclideanDistance:
     def __init__(
         self,
-        employee_data: pd.DataFrame,
-        task_data: pd.DataFrame,
+        rcd_df: pd.DataFrame,
+        acd_df: pd.DataFrame,
     ) -> None:
-        self.employee_data = employee_data
-        self.task_data = task_data
+        """
+        Initializes the WeightedEuclideanDistance class with required (task) and actual (employee) competency data.
+
+        Args:
+            rcd_df (pd.DataFrame): DataFrame containing Tasks dataset.
+            acd_df (pd.DataFrame): DataFrame containing Employees dataset.
+
+        Example:
+        >>> rcd_df = pd.DataFrame({
+        ...     'math': [0, 3, 5, 4, 0, 4, 3, 3, 0, 5],
+        ...     'python': [5, 3, 4, 3, 2, 1, 3, 4, 3, 5],
+        ...     'sql': [3, 5, 4, 3, 1, 5, 4, 5, 2, 5],
+        ...     'cloud': [4, 4, 5, 3, 0, 5, 4, 5, 0, 5],
+        ...     'database': [4, 3, 5, 3, 1, 0, 3, 5, 2, 0],
+        ...     'optimization': [0, 1, 5, 0, 5, 0, 4, 2, 2, 5]
+        ... }, index=['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10'])
+        >>> acd_df = pd.DataFrame({
+        ...     'math': [5, 3, 4, 4, 2],
+        ...     'python': [5, 4, 4, 4, 3],
+        ...     'sql': [3, 5, 4, 5, 2],
+        ...     'cloud': [2, 4, 3, 5, 4],
+        ...     'database': [2, 3, 4, 5, 4],
+        ...     'optimization': [5, 5, 3, 4, 1]
+        ... }, index=['Talent 1', 'Talent 2', 'Talent 3', 'Talent 4', 'Talent 5'])
+        >>> wed = WeightedEuclideanDistance(rcd_df, acd_df)
+        """
+        self.rcd_df = rcd_df
+        self.acd_df = acd_df
 
     def fit(self) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Any]]:
+        """
+        Fits the model to the data and computes the scores and information.
+
+        Returns:
+            Tuple[Dict[str, Dict[str, float]], Dict[str, Any]]: A tuple containing:
+                - score (Dict[str, Dict[str, float]]): A dictionary where the keys are employee IDs
+                  and the values are dictionaries of task IDs and their corresponding scores.
+                - info (Dict[str, Any]): A dictionary containing detailed information on weights
+                  and distances.
+
+        Example:
+            >>> score, info = wed.fit()
+        """
         score, info = self.apply_wed()
         score = self.rank_wed(score)
+
         return score, info
 
     def calculate_weight(
         self, employee: pd.Series, task: pd.Series, alpha: float = 0.5
     ) -> Tuple[pd.Series, np.ndarray]:
+        """
+        Calculates the difference and weight between employee and task competencies.
+
+        Args:
+            employee (pd.Series): Series containing employee competencies.
+            task (pd.Series): Series containing task requirements.
+            alpha (float): Parameter to adjust the weight calculation. Default is 0.5.
+
+        Returns:
+            Tuple[pd.Series, np.ndarray]: A tuple containing:
+                - diff (pd.Series): The difference between employee competencies and task requirements.
+                - weight (np.ndarray): The calculated weight based on the difference.
+        """
         # calculate the difference between employee and task
         diff = employee - task
 
@@ -428,6 +492,18 @@ class WeightedEuclideanDistance:
         return diff, weight
 
     def calculate_wed(self, diff: pd.Series, weight: np.ndarray) -> Tuple[float, float]:
+        """
+        Calculates the weighted Euclidean distance and normalizes the score.
+
+        Args:
+            diff (pd.Series): The difference between employee competencies and task requirements.
+            weight (np.ndarray): The calculated weight based on the difference.
+
+        Returns:
+            Tuple[float, float]: A tuple containing:
+                - score (float): The normalized score.
+                - distance (float): The weighted Euclidean distance.
+        """
         # calculate Weighted Euclidean Distance
         distance = np.sqrt(np.sum(weight * (diff**2)))
 
@@ -437,16 +513,28 @@ class WeightedEuclideanDistance:
         return score, distance
 
     def apply_wed(self) -> Tuple[Dict[str, Dict[str, float]], Any]:
+        """
+        Applies the weighted Euclidean distance calculation to all employees and tasks.
+
+        Returns:
+            Tuple[Dict[str, Dict[str, float]], Any]: A tuple containing:
+                - score (Dict[str, Dict[str, float]]): A dictionary where the keys are employee IDs
+                  and the values are dictionaries of task IDs and their corresponding scores.
+                - info (Any): A dictionary containing detailed information on weights and distances.
+
+        Example:
+            >>> score, info = wed.apply_wed()
+        """
         score = {}
         weight = {}
         distance = {}
 
-        for employee_id, employee_skills in self.employee_data.iterrows():
+        for employee_id, employee_skills in self.acd_df.iterrows():
             score[employee_id] = {}
             weight[employee_id] = {}
             distance[employee_id] = {}
 
-            for task_id, task_requirements in self.task_data.iterrows():
+            for task_id, task_requirements in self.rcd_df.iterrows():
                 diff, task_weight = self.calculate_weight(
                     employee_skills, task_requirements
                 )
@@ -463,6 +551,21 @@ class WeightedEuclideanDistance:
     def rank_wed(
         self, score: Dict[str, Dict[str, float]]
     ) -> Dict[str, Dict[str, float]]:
+        """
+        Ranks the tasks for each employee based on the scores.
+
+        Args:
+            score (Dict[str, Dict[str, float]]): A dictionary where the keys are employee IDs
+            and the values are dictionaries of task IDs and their corresponding scores.
+
+        Returns:
+            Dict[str, Dict[str, float]]: A dictionary where the keys are employee IDs
+            and the values are dictionaries of task IDs and their corresponding scores, sorted
+            in descending order of the scores.
+
+        Example:
+            >>> score = wed.rank_wed()
+        """
         ranking = {}
 
         for employee, task_scores in score.items():

@@ -12,7 +12,7 @@ The solution is divided into several sections, each responsible for a specific t
 5. Output Processing: Functions to format and output the results in a user-friendly manner.
 
 Functions:
-- s1_data_structure(employee_path, task_path): Pre-process and structure employee and task data.
+- s1_data_structure(employee_path, task_path): Pre-process and structure employee, task data, and score metric data.
 - s2_construct_model(license_path): Construct the optimization model with specified parameters.
 - s3_decision_variable(model, tasks, employees, company_tasks): Define decision variables for the model.
 - s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload): Set constraints for the optimization model.
@@ -183,7 +183,7 @@ def s1_data_structure(
             score, info = ca.fit()
         else:
             # Calculate with Weighted Euclidean Distance
-            wed = WeightedEuclideanDistance(acd_df, rcd_df)
+            wed = WeightedEuclideanDistance(rcd_df, acd_df)
             score, info = wed.fit()
 
         # Export the score dictionary to CSV
@@ -1227,6 +1227,8 @@ task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
 # Maximum Workload from Environment Variables
 max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
 
+metrics = "CompetencyAssessment" if overqualification else "WeightedEuclideanDistance"
+
 
 def main():
     """
@@ -1242,9 +1244,8 @@ def main():
     """
     print(header)
 
-    header_msg = (
-        "Task Assignment Optimization Problem: START with Competence Assessment"
-    )
+    header_msg = f"Task Assignment Optimization Problem: START with {metrics}"
+    print(header_msg)
     send_discord_notification(header_msg)
 
     print("\nExecuting the Steps...\n\n")
