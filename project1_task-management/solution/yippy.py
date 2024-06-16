@@ -54,7 +54,9 @@ Last Modified:
 June 2024
 """
 
+import math
 import heapq
+import numpy as np
 import pandas as pd
 from typing import Dict, Tuple, List, Any
 
@@ -400,5 +402,32 @@ class CompetencyAssessment:
 
 
 class WeightedEuclideanDistance:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, employee_data: pd.DataFrame, task_data: pd.DataFrame) -> None:
+        self.employee_data = employee_data
+        self.task_data = task_data
+        self.score = {}
+        self.count_no_match = 0
+
+    def fit(self, employee_data, task_data) -> None:
+        diff, weight = calculate_weight(employee_data, task_data)
+        score = calculate_wed(diff, weight)
+
+    def calculate_weight(
+        self, employee: pd.DataFrame, task: pd.DataFrame, alpha: float = 0.5
+    ) -> Tuple[float, float]:
+        # calculate the difference between employee and task
+        diff = employee - task
+
+        # calculate the weight
+        weight = 0 if task_data == 0 else 1 / (1 + alpha * np.maximum(0, diff))
+
+        return diff, weight
+
+    def calculate_wed(self, diff: float, weight: float) -> float:
+        # calculate Weighted Euclidean Distance
+        distance = np.sqrt(np.sum(weight * (diff**2)))
+
+        # normalize the distance
+        score = 1 / (1 + distance)
+
+        return score
