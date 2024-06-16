@@ -402,32 +402,72 @@ class CompetencyAssessment:
 
 
 class WeightedEuclideanDistance:
-    def __init__(self, employee_data: pd.DataFrame, task_data: pd.DataFrame) -> None:
+    def __init__(
+        self,
+        employee_data: pd.DataFrame,
+        task_data: pd.DataFrame,
+    ) -> None:
         self.employee_data = employee_data
         self.task_data = task_data
-        self.score = {}
-        self.count_no_match = 0
 
-    def fit(self, employee_data, task_data) -> None:
-        diff, weight = calculate_weight(employee_data, task_data)
-        score = calculate_wed(diff, weight)
+    def fit(self) -> Tuple[Dict[str, Dict[str, float]], Dict[str, Any]]:
+        score, info = self.apply_wed()
+        score = self.rank_wed(score)
+        return score, info
 
     def calculate_weight(
-        self, employee: pd.DataFrame, task: pd.DataFrame, alpha: float = 0.5
-    ) -> Tuple[float, float]:
+        self, employee: pd.Series, task: pd.Series, alpha: float = 0.5
+    ) -> Tuple[pd.Series, np.ndarray]:
         # calculate the difference between employee and task
         diff = employee - task
 
         # calculate the weight
-        weight = 0 if task_data == 0 else 1 / (1 + alpha * np.maximum(0, diff))
+        denom = 1 + (alpha * np.maximum(0, diff))  # nan handling
+        weight = np.where(task == 0, 0, np.where(denom == 0, 0, 1 / denom))
 
         return diff, weight
 
-    def calculate_wed(self, diff: float, weight: float) -> float:
+    def calculate_wed(self, diff: pd.Series, weight: np.ndarray) -> Tuple[float, float]:
         # calculate Weighted Euclidean Distance
         distance = np.sqrt(np.sum(weight * (diff**2)))
 
         # normalize the distance
         score = 1 / (1 + distance)
 
-        return score
+        return score, distance
+
+    def apply_wed(self) -> Tuple[Dict[str, Dict[str, float]], Any]:
+        score = {}
+        weight = {}
+        distance = {}
+
+        for employee_id, employee_skills in self.employee_data.iterrows():
+            score[employee_id] = {}
+            weight[employee_id] = {}
+            distance[employee_id] = {}
+
+            for task_id, task_requirements in self.task_data.iterrows():
+                diff, task_weight = self.calculate_weight(
+                    employee_skills, task_requirements
+                )
+                task_score, task_distance = self.calculate_wed(diff, task_weight)
+
+                score[employee_id][task_id] = task_score
+                weight[employee_id][task_id] = task_weight
+                distance[employee_id][task_id] = task_distance
+
+        info = {"weight": weight, "distance": distance}
+
+        return score, info
+
+    def rank_wed(
+        self, score: Dict[str, Dict[str, float]]
+    ) -> Dict[str, Dict[str, float]]:
+        ranking = {}
+
+        for employee, task_scores in score.items():
+            ranking[employee] = dict(
+                sorted(task_scores.items(), key=lambda item: item[1], reverse=True)
+            )
+
+        return ranking

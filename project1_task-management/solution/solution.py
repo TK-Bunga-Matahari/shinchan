@@ -57,7 +57,7 @@ import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 from typing import Dict, List, Tuple, Any
 from gurobipy import GRB, Model, quicksum
-from yippy import CompetencyAssessment
+from yippy import CompetencyAssessment, WeightedEuclideanDistance
 
 
 # Load environment variables from .env file
@@ -163,27 +163,28 @@ def s1_data_structure(
         company_tasks = dict(sorted(company_tasks.items()))
 
         # 1.4. Pre-Processing: Skill Metric Score Calculation
+        """
+        # 1.4.1 Pre-Processing: Competency Assessment
+        First, create RCD-ACD Dataframe that we get from Task Dataframe for RCD and from Employee Dataframe for ACD.
+        """
+
+        # 1.4.2 Required Competence Data
+        rcd_df = task_df.drop(columns=["project_id", "story_points"])
+        rcd_df = rcd_df.fillna(0)
+
+        # 1.4.3 Acquired Competence Data
+        # create a copy of the original DataFrame
+        acd_df = employee_skills_df.copy()
+        acd_df = acd_df.fillna(0)
+
         if overqualification:
-            """
-            # 1.4.1 Pre-Processing: Competency Assessment
-            First, create RCD-ACD Dataframe that we get from Task Dataframe for RCD and from Employee Dataframe for ACD.
-            """
-
-            # 1.4.2 Required Competence Data
-            rcd_df = task_df.drop(columns=["project_id", "story_points"])
-            rcd_df = rcd_df.fillna(0)
-
-            # 1.4.3 Acquired Competence Data
-            # create a copy of the original DataFrame
-            acd_df = employee_skills_df.copy()
-            acd_df = acd_df.fillna(0)
-
-            # 1.4.4 Fit the Data for calculate the MSG score
+            # Calculate with Competency Assessment
             ca = CompetencyAssessment(rcd_df, acd_df)
             score, info = ca.fit()
         else:
-            info = {}
-            score = {}
+            # Calculate with Weighted Euclidean Distance
+            wed = WeightedEuclideanDistance(acd_df, rcd_df)
+            score, info = wed.fit()
 
         # Export the score dictionary to CSV
         score_df = pd.DataFrame.from_dict(score, orient="index")
@@ -950,7 +951,7 @@ def s8_MOO(
         plt.figure(figsize=(10, 5))
         plt.boxplot(
             data,
-            label=[
+            tick_labels=[
                 "Objective 1\nMin Idle Employee",
                 "Objective 2\nMax Assessment Score",
                 "Objective 3\nBalancing the Workload",
