@@ -1,9 +1,10 @@
 """
 Module Name: yippy.py
-Objective: Implement the CompetencyAssessment and WeightedEuclideanDistance classes to calculate MSG scores for each employee and rank them based on their scores.
+Objective: Implement the CompetencyAssessment and WeightedEuclideanDistance classes to calculate skill metrics scores for each employee and rank them based on their scores.
 
 Description:
-This module provides the CompetencyAssessment and WeightedEuclideanDistance classes which are used to assess the competencies of employees against the required competencies for various tasks. They calculate the weighted scores, identify gaps between required and actual competencies, and rank employees based on their Mean Skill Gap (MSG) scores or Weighted Euclidean Distance.
+This module provides the CompetencyAssessment and WeightedEuclideanDistance classes which are used to assess the competencies of employees against the required competencies for various tasks.
+They calculate the weighted scores, identify gaps between required and actual competencies, and rank employees based on their Mean Skill Gap (MSG) scores with Competency Assessment Method or Weighted Euclidean Distance method.
 
 Classes:
 - CompetencyAssessment: A class to assess the competencies of employees against required competencies for tasks using MSG scores.
@@ -57,7 +58,7 @@ Example:
 >>> wed = WeightedEuclideanDistance(rcd_df, acd_df)
 >>> score, info = wed.fit()
 
-Author:
+Authors:
 TK Bunga Matahari Team
 N. Muafi, I.G.P. Wisnu N., F. Zaid N., Fauzi I.S., Joseph C.L., S. Alisya
 
@@ -80,6 +81,7 @@ class CompetencyAssessment:
         ACD (Acquired Competency Data) - DataFrame containing Employees Dataset.
 
         Initializes the CompetencyAssessment class with required (task) and actual (employee) competency data.
+        A class to assess the competencies of employees against required competencies for tasks using MSG scores.
 
         Args:
             rcd_df (pd.DataFrame): DataFrame containing Tasks dataset.
@@ -232,6 +234,7 @@ class CompetencyAssessment:
     ) -> Dict[str, Dict[str, List[float]]]:
         """
         Calculates the sum of over-qualification (soq) and sum of under-qualification (suq) for each employee.
+        if gap_value >= 0, it is considered as over-qualification (soq), otherwise under-qualification (suq).
 
         Args:
             gap (Dict[str, Dict[str, Dict[str, float]]]): The gap between required and actual competencies for each employee.
@@ -263,6 +266,7 @@ class CompetencyAssessment:
     ) -> Dict[str, Dict[str, List[Any]]]:
         """
         Calculates the Mean Skill Gap (MSG) and qualification status for each employee.
+        If MSG >= 0, it is considered as Qualified, otherwise Under-Qualified.
 
         Args:
             qs (Dict[str, Dict[str, List[Any]]]): The soq and suq for each employee.
@@ -420,6 +424,7 @@ class WeightedEuclideanDistance:
     ) -> None:
         """
         Initializes the WeightedEuclideanDistance class with required (task) and actual (employee) competency data.
+        A class to assess the competencies of employees against required competencies for tasks using Weighted Euclidean Distance.
 
         Args:
             rcd_df (pd.DataFrame): DataFrame containing Tasks dataset.

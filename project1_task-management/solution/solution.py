@@ -35,7 +35,7 @@ Example:
     if __name__ == "__main__":
         main()
 
-Author:
+Authors:
 TK Bunga Matahari Team
 N. Muafi, I.G.P. Wisnu N., F. Zaid N., Fauzi I.S., Joseph C.L., S. Alisya
 
@@ -1178,6 +1178,7 @@ def send_discord_notification(message: str) -> None:
     Example:
         send_discord_notification("Model reached 5% gap.")
     """
+    # adjust to yours
     url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
     data = {"content": f"{get_timestamp()} {message}"}
     # response = requests.post(
