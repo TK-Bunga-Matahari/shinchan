@@ -1,0 +1,4 @@
+shincan_venv/
+.vscode
+*.lic
+.env

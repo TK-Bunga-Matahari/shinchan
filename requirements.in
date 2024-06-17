@@ -1,0 +1,9 @@
+gurobipy
+numpy
+pandas
+scipy
+seaborn
+matplotlib
+ace
+python-dotenv
+requests
