@@ -54,14 +54,12 @@ import pandas as pd
 import gurobipy as gp
 import matplotlib.pyplot as plt
 
-from dotenv import load_dotenv
 from typing import Dict, List, Tuple, Any
 from gurobipy import GRB, Model, quicksum
-from yippy import CompetencyAssessment, WeightedEuclideanDistance
 
-
-# Load environment variables from .env file
-load_dotenv()
+import optimizer.config as config
+from optimizer import license_params
+from optimizer.tools import CompetencyAssessment, WeightedEuclideanDistance
 
 
 def s1_data_structure(
@@ -220,11 +218,13 @@ def s2_construct_model(license_params: Dict[str, Any]) -> Model:
         model = Model(name="task_assignment", env=env)
 
         # Set Gurobi parameters to improve performance
-        model.setParam("Presolve", presolve)  # Aggressive presolve
-        model.setParam("MIPFocus", MIPFocus)  # Focus on improving the best bound
-        model.setParam("MIPGap", MIPGap)  # 1% optimality gap
-        model.setParam("Heuristics", heuristics)  # Increase heuristics effort
-        model.setParam("Threads", threads)  # Use threads, adjust based on your CPU
+        model.setParam("Presolve", config.presolve)  # Aggressive presolve
+        model.setParam("MIPFocus", config.MIPFocus)  # Focus on improving the best bound
+        model.setParam("MIPGap", config.MIPGap)  # 1% optimality gap
+        model.setParam("Heuristics", config.heuristics)  # Increase heuristics effort
+        model.setParam(
+            "Threads", config.threads
+        )  # Use threads, adjust based on your CPU
 
         return model
 
@@ -284,13 +284,16 @@ def s3_decision_variable(
 
         # Decision variable for max workload that can be assigned
         max_workload = model.addVar(
-            vtype=GRB.INTEGER, lb=0, ub=max_employee_workload, name="max_workload"
+            vtype=GRB.INTEGER,
+            lb=0,
+            ub=config.max_employee_workload,
+            name="max_workload",
         )
 
         # Integrate new variables
         model.update()
 
-        return x, y, z, max_employee_workload, max_workload
+        return x, y, z, config.max_employee_workload, max_workload
 
     except Exception as e:
         send_discord_notification(f"An error occured in s3_decision_variable: {e}")
@@ -810,9 +813,9 @@ def s8_MOO(
     try:
         # define weight dictionary for each objective
         Weight = {
-            1: weight_obj1,
-            2: weight_obj2,
-            3: weight_obj3,
+            1: config.weight_obj1,
+            2: config.weight_obj2,
+            3: config.weight_obj3,
         }
 
         # Define the deviation plus and minus variables
@@ -856,7 +859,7 @@ def s8_MOO(
 
         # 8.2. Solve The Model
         gap_callback = GapCallback()
-        model.setParam("MIPGap", MIPGap_moo)
+        model.setParam("MIPGap", config.MIPGap_moo)
 
         # Solve the model
         model.optimize(gap_callback)
@@ -1032,36 +1035,6 @@ class GapCallback:
                             self.reported_gaps.add(int(percentage_gap))
 
 
-# Convert string to boolean
-def str_to_bool(value: str) -> bool:
-    """
-    Convert a string representation of truth to a boolean value.
-
-    This function takes a string and converts it to a boolean. The conversion
-    is case-insensitive and considers the strings "true", "1", and "yes" as
-    True, and all other strings as False.
-
-    Args:
-        value (str): The string to be converted to a boolean. Expected values are
-                     case-insensitive "true", "1", "yes" for True, and anything else for False.
-
-    Returns:
-        bool: The boolean value corresponding to the string representation.
-              Returns True for "true", "1", "yes" (case-insensitive), and False otherwise.
-
-    Examples:
-        >>> str_to_bool("true")
-        True
-        >>> str_to_bool("False")
-        False
-        >>> str_to_bool("YES")
-        True
-        >>> str_to_bool("no")
-        False
-    """
-    return value.lower() in ("true", "1", "yes")
-
-
 def get_employee_tasks(
     j: str,
     company_tasks: Dict[str, List[str]],
@@ -1191,46 +1164,6 @@ def send_discord_notification(message: str) -> None:
     #     print("Failed to send notification.")
 
 
-# Get License Information from Environment Variables
-wls_access_id = os.getenv("WLSACCESSID")
-wls_secret = os.getenv("WLSSECRET")
-license_id = os.getenv("LICENSEID")
-
-if wls_access_id is None or wls_secret is None or license_id is None:
-    license_params = {}
-else:
-    license_params = {
-        "WLSACCESSID": wls_access_id,
-        "WLSSECRET": wls_secret,
-        "LICENSEID": int(license_id),
-    }
-
-# Optimization Parameters from Environment Variables
-presolve = int(os.getenv("PRESOLVE", 2))
-MIPFocus = int(os.getenv("MIPFOCUS", 1))
-MIPGap = float(os.getenv("MIPGAP", 0.01))
-heuristics = float(os.getenv("HEURISTICS", 0.8))
-threads = int(os.getenv("THREADS", 2))
-MIPGap_moo = float(os.getenv("MIPGAP_MOO", 0.05))
-
-# Objective Weights from Environment Variables
-weight_obj1 = float(os.getenv("WEIGHT_OBJ1", 0.03))
-weight_obj2 = float(os.getenv("WEIGHT_OBJ2", 0.9))
-weight_obj3 = float(os.getenv("WEIGHT_OBJ3", 0.07))
-
-# Methodology from Environment Variables
-overqualification = str_to_bool(os.getenv("OVERQUALIFICATION", "True"))
-
-# File Paths from Environment Variables
-employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
-task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
-
-# Maximum Workload from Environment Variables
-max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
-
-metrics = "CompetencyAssessment" if overqualification else "WeightedEuclideanDistance"
-
-
 def main():
     """
     The main function that executes the steps for the task assignment optimization problem.
@@ -1245,7 +1178,7 @@ def main():
     """
     print(header)
 
-    header_msg = f"Task Assignment Optimization Problem: START with {metrics}"
+    header_msg = f"Task Assignment Optimization Problem: START with {config.metrics}"
     print(header_msg)
     send_discord_notification(header_msg)
 
@@ -1254,7 +1187,7 @@ def main():
     try:
         # Section 1
         employees, tasks, story_points, company_tasks, score, info = s1_data_structure(
-            employee_path, task_path, overqualification
+            config.employee_path, config.task_path, config.overqualification
         )
         section_1_msg_1 = "Section 1: Data Structure Run Successfully"
         print(section_1_msg_1)
