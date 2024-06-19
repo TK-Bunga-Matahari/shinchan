@@ -57,6 +57,7 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Any
 from gurobipy import GRB, Model, quicksum
 
+import optimizer.helper as helper
 import optimizer.config as config
 from optimizer import license_params
 from optimizer.tools import CompetencyAssessment, WeightedEuclideanDistance
