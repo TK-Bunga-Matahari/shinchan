@@ -8,6 +8,10 @@ const Address = () => {
         navigate("/");
     }
 
+    const handleHome = () => {
+        navigate("/menu");
+    }
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="text-center">
@@ -24,6 +28,7 @@ const Address = () => {
                         onClick={() => {
                             // Handle address submit logic here
                             console.log("Address submitted");
+                            handleHome();
                         }}
                     >
                         Submit
