@@ -51,12 +51,12 @@ function ResultsComponent() {
                 </thead>
                 <tbody>
                     <tr>
-                    <td className="border px-4 py-2">Talent 101</td>
-                    <td className="border px-4 py-2">T31, T54, T65</td>
-                    <td className="border px-4 py-2">C3</td>
-                    <td className="border px-4 py-2">18</td>
-                    <td className="border px-4 py-2">2</td>
-                    <td className="border px-4 py-2">80%</td>
+                    <td className="border px-4 py-2 text-center">Talent 101</td>
+                    <td className="border px-4 py-2 text-center">T31, T54, T65, T67, T89</td>
+                    <td className="border px-4 py-2 text-center">C3</td>
+                    <td className="border px-4 py-2 text-center">18</td>
+                    <td className="border px-4 py-2 text-center">2</td>
+                    <td className="border px-4 py-2 text-center">80%</td>
                     </tr>
                     {/* Additional rows can be added here */}
                 </tbody>
