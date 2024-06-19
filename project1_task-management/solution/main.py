@@ -131,7 +131,7 @@ def main():
         # Section 5
         helper.send_discord_notification("Section 5: Objective 1 START")
         start_time = datetime.datetime.now()
-        mu_Z_1, mu_Z_star, assessment_score_1 = create_objective.s5_objective1(
+        mu_Z_1, mu_Z_star, assessment_score_1 = create_objective.objective1(
             model,
             employees,
             company_tasks,
@@ -156,7 +156,7 @@ def main():
         # Section 6
         helper.send_discord_notification("Section 6: Objective 2 START")
         start_time = datetime.datetime.now()
-        mu_Z_2, mu_Z_star, assessment_score_2 = create_objective.s6_objective2(
+        mu_Z_2, mu_Z_star, assessment_score_2 = create_objective.objective2(
             model,
             employees,
             company_tasks,
@@ -181,7 +181,7 @@ def main():
         # Section 7
         helper.send_discord_notification("Section 7: Objective 3 START")
         start_time = datetime.datetime.now()
-        mu_Z_3, mu_Z_star, assessment_score_3 = create_objective.s7_objective3(
+        mu_Z_3, mu_Z_star, assessment_score_3 = create_objective.objective3(
             model,
             employees,
             company_tasks,
@@ -206,7 +206,7 @@ def main():
         # Section 8
         helper.send_discord_notification("Section 8: MOO START")
         start_time = datetime.datetime.now()
-        assessment_score_4 = create_objective.s8_MOO(
+        assessment_score_4 = create_objective.MOO(
             model,
             employees,
             company_tasks,

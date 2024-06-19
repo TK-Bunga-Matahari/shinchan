@@ -1,13 +1,13 @@
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
-from typing import Dict, List, Tuple, Any
-from gurobipy import GRB, Model, quicksum
 from . import report, helper, config
+from gurobipy import GRB, Model, quicksum
+from typing import Dict, List, Tuple, Any
 from optimizer.callback import GapCallback
 
 
-def s5_objective1(
+def objective1(
     model: Model,
     employees: List[str],
     company_tasks: Dict[str, List[str]],
@@ -136,7 +136,7 @@ def s5_objective1(
         return None, mu_Z_star, pd.Series()
 
 
-def s6_objective2(
+def objective2(
     model: Model,
     employees: List[str],
     company_tasks: Dict[str, List[str]],
@@ -265,7 +265,7 @@ def s6_objective2(
         return None, mu_Z_star, pd.Series()
 
 
-def s7_objective3(
+def objective3(
     model: Model,
     employees: List[str],
     company_tasks: Dict[str, List[str]],
@@ -392,7 +392,7 @@ def s7_objective3(
         return None, mu_Z_star, pd.Series()
 
 
-def s8_MOO(
+def MOO(
     model: Model,
     employees: List[str],
     company_tasks: Dict[str, List[str]],
