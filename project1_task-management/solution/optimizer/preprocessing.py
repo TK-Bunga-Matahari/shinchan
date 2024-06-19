@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple, Any
 from optimizer.tools import CompetencyAssessment, WeightedEuclideanDistance
 
 
-def s1_data_structure(
+def define_data_structure(
     employee_path: str, task_path: str, overqualification: bool
 ) -> Tuple[
     List[str],  # employees
@@ -71,7 +71,7 @@ def s1_data_structure(
     T10             P3             5     5       5    5      5         0             5
 
     Example:
-    employees, tasks, story_points, company_tasks, score, info = s1_data_structure('employees.csv', 'tasks.csv')
+    employees, tasks, story_points, company_tasks, score, info = define_data_structure('employees.csv', 'tasks.csv')
     """
 
     try:

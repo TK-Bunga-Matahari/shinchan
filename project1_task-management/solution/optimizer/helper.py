@@ -9,7 +9,8 @@ def start() -> None:
     """
     Startup Information to solve the task assignment optimization problem.
 
-
+    Example:
+        start()
     """
     header = """
     ==============================================

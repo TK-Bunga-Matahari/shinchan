@@ -12,14 +12,14 @@ The solution is divided into several sections, each responsible for a specific t
 5. Output Processing: Functions to format and output the results in a user-friendly manner.
 
 Functions:
-- s1_data_structure(employee_path, task_path): Pre-process and structure employee, task data, and score metric data.
-- s2_construct_model(license_path): Construct the optimization model with specified parameters.
-- s3_decision_variable(model, tasks, employees, company_tasks): Define decision variables for the model.
-- s4_constraint(model, x, y, z, employees, company_tasks, story_points, max_workload): Set constraints for the optimization model.
-- s5_objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star): Minimize the idle employee.
-- s6_objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star): Maximize the assessment score.
-- s7_objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star): Balance the workload for each employee.
-- s8_MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z_1, mu_Z_2, mu_Z_3, mu_Z_star, assessment_score_1, assessment_score_2, assessment_score_3): Multi-Objective Optimization using Goal Programming.
+- define_data_structure(employee_path, task_path): Pre-process and structure employee, task data, and score metric data.
+- construct_model(license_path): Construct the optimization model with specified parameters.
+- decision_variables(model, tasks, employees, company_tasks): Define decision variables for the model.
+- constraints(model, x, y, z, employees, company_tasks, story_points, max_workload): Set constraints for the optimization model.
+- objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star): Minimize the idle employee.
+- objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star): Maximize the assessment score.
+- objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star): Balance the workload for each employee.
+- MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z_1, mu_Z_2, mu_Z_3, mu_Z_star, assessment_score_1, assessment_score_2, assessment_score_3): Multi-Objective Optimization using Goal Programming.
 
 Classes:
 - GapCallback: A callback class to report optimization progress and gap.
@@ -66,11 +66,11 @@ def main():
     try:
         # Section 1
         employees, tasks, story_points, company_tasks, score, info = (
-            preprocessing.s1_data_structure(
+            preprocessing.define_data_structure(
                 creds.employee_path, creds.task_path, config.overqualification
             )
         )
-        section_1_msg_1 = "Section 1: Data Structure Run Successfully"
+        section_1_msg_1 = "Section 1: Define Data Structure Run Successfully"
         print(section_1_msg_1)
         helper.send_discord_notification(section_1_msg_1)
 
@@ -89,12 +89,12 @@ def main():
             model, tasks, employees, company_tasks, config.max_employee_workload
         )
         if x and y and z and max_workload:
-            print("Section 3: Build Decision Variable Run Successfully\n\n")
+            print("Section 3: Build Decision Variables Run Successfully\n\n")
             helper.send_discord_notification(
-                "Section 3: Build Decision Variable Run Successfully"
+                "Section 3: Build Decision Variables Run Successfully"
             )
         else:
-            raise Exception("Decision variable construction failed.")
+            raise Exception("Decision variables construction failed.")
 
         # Section 4
         create_model.constraints(
@@ -108,8 +108,8 @@ def main():
             story_points,
             config.max_employee_workload,
         )
-        print("Section 4: Set Constraint Run Successfully\n\n")
-        helper.send_discord_notification("Section 4: Set Constraint Run Successfully")
+        print("Section 4: Set Constraints Run Successfully\n\n")
+        helper.send_discord_notification("Section 4: Set Constraints Run Successfully")
 
         print("\nSolving The Objective...\n\n")
 
