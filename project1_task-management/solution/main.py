@@ -61,20 +61,7 @@ def main():
     The main function that executes the steps for the task assignment optimization problem.
     """
 
-    header = """
-    ==============================================
-
-        TASK ASSIGNMENT OPTIMIZATION PROBLEM
-
-    ==============================================
-    """
-    print(header)
-
-    header_msg = f"Task Assignment Optimization Problem: START with {config.metrics}"
-    print(header_msg)
-    helper.send_discord_notification(header_msg)
-
-    print("\nExecuting the Steps...\n\n")
+    helper.start()
 
     try:
         # Section 1

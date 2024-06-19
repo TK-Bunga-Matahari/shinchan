@@ -1,6 +1,30 @@
 import datetime
 import matplotlib.pyplot as plt
+
 from typing import Dict
+from . import config, helper
+
+
+def start() -> None:
+    """
+    Startup Information to solve the task assignment optimization problem.
+
+
+    """
+    header = """
+    ==============================================
+
+        TASK ASSIGNMENT OPTIMIZATION PROBLEM
+
+    ==============================================
+    """
+    print(header)
+
+    header_msg = f"Task Assignment Optimization Problem: START with {config.metrics}"
+    print(header_msg)
+    helper.send_discord_notification(header_msg)
+
+    print("\nExecuting the Steps...\n\n")
 
 
 def read_license_file(filepath: str) -> Dict[str, str]:
