@@ -1,6 +1,6 @@
 """
-Module Name: solution.py
-Obective: Task Assignment Optimization Problem Solution
+Module Name: main.py
+Obective: Task Assignment Optimization Problem Solution Solver
 
 Description:
 This module contains the solution for the Task Assignment Optimization Problem.
@@ -88,7 +88,7 @@ def main():
         helper.send_discord_notification(section_1_msg_1)
 
         # Section 2
-        model = create_model.s2_construct_model(creds.license_params)
+        model = create_model.construct_model(creds.license_params)
         if model:
             print("Section 2: Construct Model Run Successfully\n\n")
             helper.send_discord_notification(
@@ -98,7 +98,7 @@ def main():
             raise Exception("Model construction failed.")
 
         # Section 3
-        x, y, z, max_workload = create_model.s3_decision_variable(
+        x, y, z, max_workload = create_model.decision_variables(
             model, tasks, employees, company_tasks, config.max_employee_workload
         )
         if x and y and z and max_workload:
@@ -110,7 +110,7 @@ def main():
             raise Exception("Decision variable construction failed.")
 
         # Section 4
-        create_model.s4_constraint(
+        create_model.constraints(
             model,
             x,
             y,

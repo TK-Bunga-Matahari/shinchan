@@ -1,10 +1,10 @@
 import gurobipy as gp
-from typing import Dict, List, Tuple, Any
-from gurobipy import GRB, Model, quicksum
 from . import config, helper
+from gurobipy import GRB, Model, quicksum
+from typing import Dict, List, Tuple, Any
 
 
-def s2_construct_model(license_params: Dict[str, Any]) -> Model:
+def construct_model(license_params: Dict[str, Any]) -> Model:
     """
     Constructs the optimization model.
 
@@ -15,7 +15,7 @@ def s2_construct_model(license_params: Dict[str, Any]) -> Model:
         Model: The constructed optimization model.
 
     Example:
-        model = s2_construct_model(license_params)
+        model = construct_model(license_params)
     """
 
     try:
@@ -37,12 +37,12 @@ def s2_construct_model(license_params: Dict[str, Any]) -> Model:
         return model
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in s2_construct_model: {e}")
-        print(f"An error occurred in s2_construct_model: {e}")
+        helper.send_discord_notification(f"An error occured in construct_model: {e}")
+        print(f"An error occurred in construct_model: {e}")
         return model
 
 
-def s3_decision_variable(
+def decision_variables(
     model: Model,
     tasks: List[str],
     employees: List[str],
@@ -62,12 +62,13 @@ def s3_decision_variable(
         tasks (List[int]): List of task IDs.
         employees (List[str]): List of employee IDs.
         company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
+        max_employee_workload (int): Maximum workload that can be assigned to an employee.
 
     Returns:
         Tuple: Contains decision variables x, y, z, and max_workload variable.
 
     Example:
-        x, y, z, max_workload = s3_decision_variable(model, tasks, employees, company_tasks)
+        x, y, z, max_workload = decision_variables(model, tasks, employees, company_tasks, max_employee_workload)
     """
 
     try:
@@ -105,13 +106,13 @@ def s3_decision_variable(
 
     except Exception as e:
         helper.send_discord_notification(
-            f"An error occured in s3_decision_variable: {e}"
+            f"An error occured in define decision_variables: {e}"
         )
-        print(f"An error occurred in s3_decision_variable: {e}")
+        print(f"An error occurred in define decision_variables: {e}")
         return {}, {}, {}, None
 
 
-def s4_constraint(
+def constraints(
     model: Model,
     x: Dict[Tuple[str, str, str], Any],
     y: Dict[Tuple[str, str], Any],
@@ -134,9 +135,10 @@ def s4_constraint(
         employees (List[str]): List of employee IDs.
         company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
         story_points (Dict[int, int]): Dictionary of story points for each task.
+        max_employee_workload (int): Maximum workload that can be assigned to an employee.
 
     Example:
-        s4_constraint(model, x, y, z, max_workload, employees, company_tasks, story_points)
+        constraints(model, x, y, z, max_workload, employees, company_tasks, story_points, max_employee_workload)
     """
 
     try:
@@ -192,5 +194,5 @@ def s4_constraint(
                     model.addGenConstrIndicator(z[i, j], True, y[j, k], GRB.EQUAL, 1)
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in s4_constraint: {e}")
-        print(f"An error occurred in s4_constraint: {e}")
+        helper.send_discord_notification(f"An error occured in define constraints: {e}")
+        print(f"An error occurred in define constraints: {e}")
