@@ -19,6 +19,13 @@ try:
             "WLSSECRET": wls_secret,
             "LICENSEID": int(license_id),
         }
+
+    # File Paths from Environment Variables
+    employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
+    task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
+
 except Exception as e:
     license_params = {}
-    print(f"Error in get the Gurobi License: {e}")
+    employee_path = "./data/employees_data.csv"
+    task_path = "./data/tasks_data.csv"
+    print(f"Error in get the Gurobi License: {e} \n Using default dataset path.")

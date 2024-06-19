@@ -49,10 +49,6 @@ try:
     # Methodology from Environment Variables
     overqualification = str_to_bool(os.getenv("OVERQUALIFICATION", "True"))
 
-    # File Paths from Environment Variables
-    employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
-    task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
-
     # Maximum Workload from Environment Variables
     max_employee_workload = int(os.getenv("MAX_EMPLOYEE_WORKLOAD", 20))
 

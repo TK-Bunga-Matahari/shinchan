@@ -45,9 +45,6 @@ June 2024
 """
 
 # Import library
-import os
-import json
-import requests
 import datetime
 import threading
 import pandas as pd
@@ -57,9 +54,8 @@ import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Any
 from gurobipy import GRB, Model, quicksum
 
-import optimizer.helper as helper
-import optimizer.config as config
-from optimizer import license_params
+from optimizer import creds, config, helper, report
+from optimizer.callback import GapCallback
 from optimizer.tools import CompetencyAssessment, WeightedEuclideanDistance
 
 
@@ -192,7 +188,9 @@ def s1_data_structure(
         return employees, tasks, story_points, company_tasks, score, info
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s1_data_structure_CA: {e}")
+        helper.send_discord_notification(
+            f"An error occured in s1_data_structure_CA: {e}"
+        )
         print(f"An error occurred in s1_data_structure_CA: {e}")
         return [], [], {}, {}, {}, {}
 
@@ -230,7 +228,7 @@ def s2_construct_model(license_params: Dict[str, Any]) -> Model:
         return model
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s2_construct_model: {e}")
+        helper.send_discord_notification(f"An error occured in s2_construct_model: {e}")
         print(f"An error occurred in s2_construct_model: {e}")
         return model
 
@@ -297,7 +295,9 @@ def s3_decision_variable(
         return x, y, z, config.max_employee_workload, max_workload
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s3_decision_variable: {e}")
+        helper.send_discord_notification(
+            f"An error occured in s3_decision_variable: {e}"
+        )
         print(f"An error occurred in s3_decision_variable: {e}")
         return {}, {}, {}, 0, None
 
@@ -382,7 +382,7 @@ def s4_constraint(
                     model.addGenConstrIndicator(z[i, j], True, y[j, k], GRB.EQUAL, 1)
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s4_constraint: {e}")
+        helper.send_discord_notification(f"An error occured in s4_constraint: {e}")
         print(f"An error occurred in s4_constraint: {e}")
 
 
@@ -438,7 +438,7 @@ def s5_objective1(
 
             x_hat_1 = {}
             for j in employees:
-                result = get_employee_tasks(
+                result = report.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -492,7 +492,7 @@ def s5_objective1(
 
         # 5.3.2. Distribution With Respect to the Assessment Score
         # timer for auto close plot
-        timer = threading.Timer(3, close_plot)
+        timer = threading.Timer(3, helper.close_plot)
         timer.start()
 
         # make boxplot for objective 1 with respect to the assessment score
@@ -510,7 +510,7 @@ def s5_objective1(
         return mu_Z_1, mu_Z_star, assessment_score_1
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s5_objective1: {e}")
+        helper.send_discord_notification(f"An error occured in s5_objective1: {e}")
         print(f"An error occurred in s5_objective1: {e}")
         return None, mu_Z_star, pd.Series()
 
@@ -567,7 +567,7 @@ def s6_objective2(
 
             x_hat_2 = {}
             for j in employees:
-                result = get_employee_tasks(
+                result = report.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -621,7 +621,7 @@ def s6_objective2(
 
         # 6.3.2. Distribution With Respect to the Assessment Score
         # timer for auto close plot
-        timer = threading.Timer(3, close_plot)
+        timer = threading.Timer(3, helper.close_plot)
         timer.start()
 
         # make boxplot for objective 1 with respect to the assessment score
@@ -639,7 +639,7 @@ def s6_objective2(
         return mu_Z_2, mu_Z_star, assessment_score_2
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s6_objective2: {e}")
+        helper.send_discord_notification(f"An error occured in s6_objective2: {e}")
         print(f"An error occurred in s6_objective2: {e}")
         return None, mu_Z_star, pd.Series()
 
@@ -693,7 +693,7 @@ def s7_objective3(
 
             x_hat_3 = {}
             for j in employees:
-                result = get_employee_tasks(
+                result = report.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -748,7 +748,7 @@ def s7_objective3(
 
         # 7.3.2. Distribution With Respect to the Assessment Score
         # timer for auto close plot
-        timer = threading.Timer(3, close_plot)
+        timer = threading.Timer(3, helper.close_plot)
         timer.start()
 
         # make boxplot for objective 1 with respect to the assessment score
@@ -766,7 +766,7 @@ def s7_objective3(
         return mu_Z_3, mu_Z_star, assessment_score_3
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s7_objective3: {e}")
+        helper.send_discord_notification(f"An error occured in s7_objective3: {e}")
         print(f"An error occurred in s7_objective3: {e}")
         return None, mu_Z_star, pd.Series()
 
@@ -873,7 +873,7 @@ def s8_MOO(
 
             x_hat_4 = {}
             for j in employees:
-                result = get_employee_tasks(
+                result = report.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -924,7 +924,7 @@ def s8_MOO(
 
         # 8.6. Distribution With Respect to the Assessment Score
         # Timer for auto close plot
-        timer = threading.Timer(3, close_plot)
+        timer = threading.Timer(3, helper.close_plot)
         timer.start()
 
         # Make boxplot for x_hat_4
@@ -939,9 +939,9 @@ def s8_MOO(
         else:
             print("No data to show")
 
-        # 8.7. Comparing MOO Method 2 to Single Objective and MOO Method 1
+        # 8.7. Comparing MOO to Single Objective
         # Timer for auto close plot
-        timer = threading.Timer(3, close_plot)
+        timer = threading.Timer(3, helper.close_plot)
         timer.start()
 
         # Merge all boxplot in one graph
@@ -970,199 +970,10 @@ def s8_MOO(
         return assessment_score_4
 
     except Exception as e:
-        send_discord_notification(f"An error occured in s8_MOO: {e}")
+        helper.send_discord_notification(f"An error occured in s8_MOO: {e}")
         print(f"An error occurred in s8_MOO: {e}")
 
         return pd.Series()
-
-
-class GapCallback:
-    """
-    A callback class for monitoring and reporting the optimization gap during the Mixed Integer Programming (MIP) solving process.
-
-    Attributes:
-        reported_gaps (set): A set to keep track of the reported gaps to avoid duplicate notifications.
-    """
-
-    def __init__(self) -> None:
-        """
-        Initializes the GapCallback instance with an empty set for reported gaps.
-
-        Example:
-            callback = GapCallback()
-        """
-        self.reported_gaps = set()
-
-    def __call__(self, model: Model, where: int) -> None:
-        """
-        The callback function that gets called during the MIP solving process. It monitors the optimization gap and sends notifications when certain conditions are met.
-
-        Args:
-            model (gurobipy.Model): The optimization model being solved.
-            where (int): An integer code indicating the point in the solving process when the callback is called.
-
-        Example:
-            model = Model()
-            callback = GapCallback()
-            model.optimize(callback)
-        """
-        if where == GRB.Callback.MIP:
-            nodecount = model.cbGet(GRB.Callback.MIP_NODCNT)
-            if (
-                nodecount % 100 == 0
-            ):  # Adjust the frequency of the callback call if needed
-                obj_best = model.cbGet(GRB.Callback.MIP_OBJBST)
-                obj_bound = model.cbGet(GRB.Callback.MIP_OBJBND)
-                if obj_best < GRB.INFINITY and obj_bound > -GRB.INFINITY:
-                    gap = abs((obj_bound - obj_best) / obj_best) * 100
-                    percentage_gap = gap
-
-                    # Report gap for multiples of 5
-                    if percentage_gap > 10 and int(percentage_gap) % 5 == 0:
-                        if int(percentage_gap) not in self.reported_gaps:
-                            print(f"Model reached {int(percentage_gap)}% gap.")
-                            send_discord_notification(
-                                f"Model reached {int(percentage_gap)}% gap."
-                            )
-                            self.reported_gaps.add(int(percentage_gap))
-
-                    # Report gap for each integer when gap <= 10
-                    elif percentage_gap <= 10:
-                        if int(percentage_gap) not in self.reported_gaps:
-                            print(f"Model reached {percentage_gap}% gap.")
-                            send_discord_notification(
-                                f"Model reached {percentage_gap}% gap."
-                            )
-                            self.reported_gaps.add(int(percentage_gap))
-
-
-def get_employee_tasks(
-    j: str,
-    company_tasks: Dict[str, List[str]],
-    model: Model,
-    score: Dict[str, Dict[str, float]],
-    story_points: Dict[str, int],
-    max_employee_workload: int,
-) -> Tuple[List[str], List[str], int, int, List[float]]:
-    """
-    Extracts and prints the tasks assigned to an employee and computes related metrics.
-
-    Args:
-        j (int): The employee ID.
-        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
-        model (Model): The optimization model.
-        score (List[List[float]]): List of metric scores for each employee-task pair.
-        story_points (List[int]): List of story points for each task.
-        max_employee_workload (int): The maximum workload an employee can handle.
-
-    Returns:
-        Tuple[List[str], List[int], int, int, List[float]]: A tuple containing:
-            - List of company names (comp)
-            - List of task IDs (task)
-            - Total story points (sp)
-            - Wasted story points (wasted_sp)
-            - List of metric scores (sim)
-
-    Example:
-        company_tasks = {'CompanyA': [1, 2], 'CompanyB': [3]}
-        model = Model()
-        score = [[0.5, 0.7, 0.6], [0.4, 0.8, 0.5]]
-        story_points = [3, 2, 5]
-        max_employee_workload = 10
-        get_employee_tasks(1, company_tasks, model, score, story_points, max_employee_workload)
-    """
-    task = []
-    sim = []
-    comp = []
-    sp = 0
-
-    for k, tasks in company_tasks.items():
-        for i in tasks:
-            var = model.getVarByName(f"x_{i}_{j}_{k}")
-            if var is not None and var.X == 1:
-                print(f"Task {i} assigned to Employee {j}")
-                print(f"Company\t\t\t: {k}")
-                print(f"Story Points\t\t: {story_points[i]}")
-                print(f"Metrics score\t: {score[j][i]:.10f}\n")
-
-                task.append(i)
-                sim.append(score[j][i])
-                comp.append(k)
-                sp += story_points[i]
-
-    wasted_sp = max_employee_workload - sp if sp > 0 else 0
-    return comp, task, sp, wasted_sp, sim
-
-
-def read_license_file(filepath: str) -> Dict[str, str]:
-    """
-    Reads the Gurobi license file and extracts the license parameters.
-
-    Args:
-        filepath (str): The path to the license file.
-
-    Returns:
-        Dict[str, str]: A dictionary containing the license parameters.
-
-    Example:
-        license_params = read_license_file("gurobi.lic")
-    """
-    params = {}
-    with open(filepath, "r") as file:
-        for line in file:
-            if line.startswith("WLSACCESSID"):
-                params["WLSACCESSID"] = line.split("=")[1].strip()
-            elif line.startswith("WLSSECRET"):
-                params["WLSSECRET"] = line.split("=")[1].strip()
-            elif line.startswith("LICENSEID"):
-                params["LICENSEID"] = int(line.split("=")[1].strip())
-    return params
-
-
-def close_plot() -> None:
-    """
-    Closes the current plot.
-
-    Example:
-        close_plot()
-    """
-    plt.close()
-
-
-def get_timestamp() -> str:
-    """
-    Gets the current timestamp in the format (HH.MM DD/MM/YYYY).
-
-    Returns:
-        str: The current timestamp.
-
-    Example:
-        timestamp = get_timestamp()
-    """
-    return datetime.datetime.now().strftime("(%H.%M %d/%m/%Y)")
-
-
-def send_discord_notification(message: str) -> None:
-    """
-    Sends a notification with the given message to a Discord channel.
-
-    Args:
-        message (str): The message to be sent.
-
-    Example:
-        send_discord_notification("Model reached 5% gap.")
-    """
-    # adjust to yours
-    url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
-    data = {"content": f"{get_timestamp()} {message}"}
-    # response = requests.post(
-    #     url, data=json.dumps(data), headers={"Content-Type": "application/json"}
-    # )
-
-    # if response.status_code == 204:
-    #     print("Notification sent successfully.")
-    # else:
-    #     print("Failed to send notification.")
 
 
 def main():
@@ -1181,24 +992,26 @@ def main():
 
     header_msg = f"Task Assignment Optimization Problem: START with {config.metrics}"
     print(header_msg)
-    send_discord_notification(header_msg)
+    helper.send_discord_notification(header_msg)
 
     print("\nExecuting the Steps...\n\n")
 
     try:
         # Section 1
         employees, tasks, story_points, company_tasks, score, info = s1_data_structure(
-            config.employee_path, config.task_path, config.overqualification
+            creds.employee_path, creds.task_path, config.overqualification
         )
         section_1_msg_1 = "Section 1: Data Structure Run Successfully"
         print(section_1_msg_1)
-        send_discord_notification(section_1_msg_1)
+        helper.send_discord_notification(section_1_msg_1)
 
         # Section 2
-        model = s2_construct_model(license_params)
+        model = s2_construct_model(creds.license_params)
         if model:
             print("Section 2: Construct Model Run Successfully\n\n")
-            send_discord_notification("Section 2: Construct Model Run Successfully")
+            helper.send_discord_notification(
+                "Section 2: Construct Model Run Successfully"
+            )
         else:
             raise Exception("Model construction failed.")
 
@@ -1208,7 +1021,7 @@ def main():
         )
         if x and y and z:
             print("Section 3: Build Decision Variable Run Successfully\n\n")
-            send_discord_notification(
+            helper.send_discord_notification(
                 "Section 3: Build Decision Variable Run Successfully"
             )
         else:
@@ -1219,14 +1032,14 @@ def main():
             model, x, y, z, employees, company_tasks, story_points, max_workload
         )
         print("Section 4: Set Constraint Run Successfully\n\n")
-        send_discord_notification("Section 4: Set Constraint Run Successfully")
+        helper.send_discord_notification("Section 4: Set Constraint Run Successfully")
 
         print("\nSolving The Objective...\n\n")
 
         mu_Z_star = {i: 0.00 for i in range(1, 4)}
 
         # Section 5
-        send_discord_notification("Section 5: Objective 1 START")
+        helper.send_discord_notification("Section 5: Objective 1 START")
         start_time = datetime.datetime.now()
         mu_Z_1, mu_Z_star, assessment_score_1 = s5_objective1(
             model,
@@ -1243,15 +1056,15 @@ def main():
 
         if mu_Z_1 and assessment_score_1 is not None:
             print("Section 5: Objective 1 Run Successfully\n\n")
-            send_discord_notification(
+            helper.send_discord_notification(
                 f"Section 5: Objective 1 Run Successfully with {duration} seconds"
             )
         else:
-            send_discord_notification("Objective 1 failed.")
+            helper.send_discord_notification("Objective 1 failed.")
             raise Exception("Objective 1 failed.")
 
         # Section 6
-        send_discord_notification("Section 6: Objective 2 START")
+        helper.send_discord_notification("Section 6: Objective 2 START")
         start_time = datetime.datetime.now()
         mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(
             model,
@@ -1267,16 +1080,16 @@ def main():
         duration = (end_time - start_time).seconds
 
         if mu_Z_2 and assessment_score_2 is not None:
-            send_discord_notification(
+            helper.send_discord_notification(
                 f"Section 6: Objective 2 Run Successfully with {duration} seconds"
             )
             print("Section 6: Objective 2 Run Successfully\n\n")
         else:
-            send_discord_notification("Objective 2 failed.")
+            helper.send_discord_notification("Objective 2 failed.")
             raise Exception("Objective 2 failed.")
 
         # Section 7
-        send_discord_notification("Section 7: Objective 3 START")
+        helper.send_discord_notification("Section 7: Objective 3 START")
         start_time = datetime.datetime.now()
         mu_Z_3, mu_Z_star, assessment_score_3 = s7_objective3(
             model,
@@ -1292,16 +1105,16 @@ def main():
         duration = (end_time - start_time).seconds
 
         if mu_Z_3 and assessment_score_3 is not None:
-            send_discord_notification(
+            helper.send_discord_notification(
                 f"Section 7: Objective 3 Run Successfully with {duration} seconds"
             )
             print("Section 7: Objective 3 Run Successfully\n\n")
         else:
-            send_discord_notification("Objective 3 failed.")
+            helper.send_discord_notification("Objective 3 failed.")
             raise Exception("Objective 3 failed.")
 
         # Section 8
-        send_discord_notification("Section 8: MOO START")
+        helper.send_discord_notification("Section 8: MOO START")
         start_time = datetime.datetime.now()
         assessment_score_4 = s8_MOO(
             model,
@@ -1321,23 +1134,23 @@ def main():
         end_time = datetime.datetime.now()
         duration = (end_time - start_time).seconds
         if assessment_score_4 is not None:
-            send_discord_notification(
+            helper.send_discord_notification(
                 f"Section 8: MOO Run Successfully with {duration} seconds"
             )
             print("Section 8: MOO Run Successfully\n\n")
         else:
-            send_discord_notification("MOO failed.")
+            helper.send_discord_notification("MOO failed.")
             raise Exception("MOO failed.")
 
     except Exception as e:
-        send_discord_notification(f"An error occurred: {e}")
+        helper.send_discord_notification(f"An error occurred: {e}")
         print(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
     try:
         main()
-        send_discord_notification("Script ran successfully.")
+        helper.send_discord_notification("Script ran successfully.")
     except Exception as e:
         error_message = str(e)
-        send_discord_notification(f"Script failed with error: {error_message}")
+        helper.send_discord_notification(f"Script failed with error: {error_message}")
