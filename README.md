@@ -62,25 +62,6 @@ LICENSEID=your_license_id
 # File Paths
 EMPLOYEE_PATH=./your/path/to/employees_data.csv
 TASK_PATH=./your/path/to/tasks_data.csv
-
-# Maximum Employee Workload
-MAX_EMPLOYEE_WORKLOAD=10
-
-# Optimization Parameters
-PRESOLVE=2
-MIPFOCUS=1
-MIPGAP=0.01
-HEURISTICS=0.8
-THREADS=2
-MIPGAP_MOO=0.05
-
-# Objective Weights
-WEIGHT_OBJ1=0.03
-WEIGHT_OBJ2=0.9
-WEIGHT_OBJ3=0.07
-
-# Methodology
-OVERQUALIFICATION=True
 ```
 
 Feel free to adjust the `.env` file content example to match the actual environment variables needed for your conditions.
