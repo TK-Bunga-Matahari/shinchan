@@ -34,7 +34,7 @@ def objective1(
         Tuple: Contains objective value, updated mu_Z_star, and assessment score.
 
     Example:
-        mu_Z_1, mu_Z_star, assessment_score_1 = s5_objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star)
+        mu_Z_1, mu_Z_star, assessment_score_1 = objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star)
     """
     try:
         # single objective 1
@@ -99,7 +99,7 @@ def objective2(
         Tuple: Contains objective value, updated mu_Z_star, and assessment score.
 
     Example:
-        mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star)
+        mu_Z_2, mu_Z_star, assessment_score_2 = objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star)
     """
     try:
         mu_Z_2 = quicksum(
@@ -163,7 +163,7 @@ def objective3(
         Tuple: Contains objective value, updated mu_Z_star, and assessment score.
 
     Example:
-        mu_Z_3, mu_Z_star, assessment_score_3 = s7_objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star)
+        mu_Z_3, mu_Z_star, assessment_score_3 = objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star)
     """
     try:
         mu_Z_3 = max_workload
@@ -223,7 +223,7 @@ def MOO(
 
     Example:
         mu_Z = {1: mu_Z_1, 2: mu_Z_2, 3: mu_Z_3}
-        assessment_score_4 = s8_MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z, mu_Z_star)
+        assessment_score_4 = MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z, mu_Z_star)
     """
     try:
         # define weight dictionary for each objective

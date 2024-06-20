@@ -1,6 +1,6 @@
 """
 Module Name: main.py
-Obective: Task Assignment Optimization Problem Solution Solver
+Obective: Task Assignment Optimization Problem Solver
 
 Description:
 This module contains the solution for the Task Assignment Optimization Problem.
@@ -20,6 +20,7 @@ Functions:
 - objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star): Maximize the assessment score.
 - objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star): Balance the workload for each employee.
 - MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z_1, mu_Z_2, mu_Z_3, mu_Z_star, assessment_score_1, assessment_score_2, assessment_score_3): Multi-Objective Optimization using Goal Programming.
+- compare_scores(data, title, output_file): Compare the score results for every objective with Box Plot.
 
 Classes:
 - CompetencyAssessment: A class to assess the competencies of employees against required competencies for tasks using MSG scores.
@@ -27,15 +28,13 @@ Classes:
 - GapCallback: A callback class to report optimization progress and gap.
 
 Usage:
-Import the module in requirement file and yippy file to process the assessment.
+Import the module in requirement file and optimizer package to process the assessment.
 The solution can be executed by running the main() function, which orchestrates
 the entire workflow from data input to output processing.
 
 Example:
-    from task_assignment_optimization import main
-
-    if __name__ == "__main__":
-        main()
+>>> if __name__ == "__main__":
+...     main()
 
 Authors:
 TK Bunga Matahari Team
@@ -47,7 +46,7 @@ June 2024
 """
 
 # Import library
-from optimizer import creds, config, helper, utils, create_model, run
+from optimizer import creds, config, helper, utils, create_model as m, run
 
 
 def main():
@@ -64,29 +63,29 @@ def main():
                 creds.employee_path, creds.task_path, config.overqualification
             )
         )
-        msg_1 = "Section 1: Define Data Structure Run Successfully"
+        msg_1 = "Section 1: Defining Data Structure Run Successfully"
         helper.show(msg_1, helper.discord_status)
 
         # Section 2
-        model = create_model.construct_model(creds.license_params)
+        model, mu_Z_star = m.construct_model(creds.license_params)
         if model:
-            msg_2 = "Section 2: Construct Model Run Successfully"
+            msg_2 = "Section 2: Model construction Run Successfully"
             helper.show(msg_2, helper.discord_status)
         else:
             raise Exception("Model construction failed.")
 
         # Section 3
-        x, y, z, max_workload = create_model.decision_variables(
+        x, y, z, max_workload = m.decision_variables(
             model, tasks, employees, company_tasks, config.max_employee_workload
         )
         if x and y and z and max_workload:
-            msg_3 = "Section 3: Build Decision Variables Run Successfully"
+            msg_3 = "Section 3: Decision variables construction Run Successfully"
             helper.show(msg_3, helper.discord_status)
         else:
             raise Exception("Decision variables construction failed.")
 
         # Section 4
-        create_model.constraints(
+        m.constraints(
             model,
             x,
             y,
@@ -97,12 +96,10 @@ def main():
             story_points,
             config.max_employee_workload,
         )
-        msg_4 = "Section 4: Set Constraints Run Successfully"
+        msg_4 = "Section 4: Set-up The Constraints Run Successfully"
         helper.show(msg_4, helper.discord_status)
 
         print("\nSolving The Objective...\n\n")
-
-        mu_Z_star = {i: 0.00 for i in range(1, 4)}
 
         # Section 5
         mu_Z_1, mu_Z_star, assessment_score_1 = run.run_objective1(

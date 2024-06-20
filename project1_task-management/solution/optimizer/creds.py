@@ -27,8 +27,7 @@ try:
 
     discord_wh_url = os.getenv("DISCORD_URL")
 
-    if discord_wh_url is None:
-        helper.discord_status = False
+    helper.discord_status = False if discord_wh_url is None else helper.discord_status
 
 except Exception as e:
     license_params = {}

@@ -4,7 +4,7 @@ from gurobipy import GRB, Model, quicksum
 from typing import Dict, List, Tuple, Any
 
 
-def construct_model(license_params: Dict[str, Any]) -> Model:
+def construct_model(license_params: Dict[str, Any]) -> Tuple[Model, Dict[int, float]]:
     """
     Constructs the optimization model.
 
@@ -34,7 +34,9 @@ def construct_model(license_params: Dict[str, Any]) -> Model:
             "Threads", config.threads
         )  # Use threads, adjust based on your CPU
 
-        return model
+        mu_Z_star = {i: 0.00 for i in range(1, 4)}
+
+        return model, mu_Z_star
 
     except Exception as e:
         msg = f"An error occurred in construct_model: {e}"

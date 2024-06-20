@@ -41,6 +41,26 @@ def start() -> None:
 
 
 def notify_and_time(section_name):
+    """
+    A decorator to send notifications and time the execution of a function.
+
+    This decorator sends a start notification, times the execution of the decorated
+    function, sends a success notification with the duration if the function completes
+    successfully, and sends a failure notification if an exception is raised.
+
+    Args:
+        section_name (str): The name of the section being decorated, used in notifications.
+
+    Returns:
+        function: The decorated function with added notification and timing functionality.
+
+    Example:
+        @notify_and_time("Section 1: Example Function")
+        def example_function():
+            # Function implementation
+            pass
+    """
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -66,7 +86,7 @@ def notify_and_time(section_name):
     return decorator
 
 
-def show(msg: Any, status: bool) -> None:
+def show(msg: Any, status: bool = discord_status) -> None:
     """
     Show the message into discord and console
 

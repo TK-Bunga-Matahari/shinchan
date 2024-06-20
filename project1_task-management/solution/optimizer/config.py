@@ -1,5 +1,6 @@
 # import library
 import yaml
+from . import helper
 
 
 try:
@@ -33,4 +34,5 @@ try:
     discord = config["DISCORD"]
 
 except Exception as e:
-    print(f"Error in getting the Optimization Parameters: {e}")
+    msg = f"Error in getting the Configuration Parameters: {e}"
+    helper.show(msg)
