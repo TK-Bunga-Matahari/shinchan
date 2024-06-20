@@ -6,6 +6,7 @@ import PageMenu from './pages/PageMenu';
 import Service from './pages/Service';
 import ResultPage from './pages/ResultPage';
 import AddressPage from './pages/AddressPage';
+import ProgressPage from './pages/ProgressPage';
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/menu" element={<PageMenu />} />
         <Route path="/menu/taskassignments" element={<Service />} />
         <Route path="/menu/result" element={<ResultPage />} />
+        <Route path="/menu/progress" element={<ProgressPage />} />
       </Routes>
     </Router>
   );
