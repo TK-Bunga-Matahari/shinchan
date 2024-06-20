@@ -36,14 +36,15 @@ const TaskAssignments = () => {
     const [licensedFile, setLicensedFile] = useState(null);
 
     const handleFileUpload = async () => {
-        if (!employeeFile || !taskFile) {
-            console.error('Both employee and task files must be selected');
+        if (!employeeFile || !taskFile || !licensedFile) {
+            console.error('Both employee, task, license files must be selected');
             return;
         }
 
         const formData = new FormData();
         formData.append('employeeFile', employeeFile);
         formData.append('taskFile', taskFile);
+        formData.append('licensedFile', licensedFile);
 
         try {
             const idToken = await auth.currentUser.getIdToken(true);
@@ -195,7 +196,7 @@ const TaskAssignments = () => {
                 </div>
                 </div>
             </div>
-            {showPopup && (
+            {/* {showPopup && (
                 <div className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex justify-center items-center">
                     <div className="bg-white p-5 rounded flex flex-col items-center">
                         <p className="mb-4">Save your ID to track your progress.</p>
@@ -205,7 +206,7 @@ const TaskAssignments = () => {
                         </button>
                     </div>
                 </div>
-            )}
+            )} */}
         </div>
     );
 }
