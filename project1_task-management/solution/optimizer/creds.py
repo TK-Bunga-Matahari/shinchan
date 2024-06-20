@@ -1,5 +1,6 @@
 # import library
 import os
+from optimizer import helper
 from dotenv import load_dotenv
 
 try:
@@ -28,4 +29,6 @@ except Exception as e:
     license_params = {}
     employee_path = "./data/employees_data.csv"
     task_path = "./data/tasks_data.csv"
-    print(f"Error in get the Gurobi License: {e} \n Using default dataset path.")
+
+    msg = f"Error in get the Environment Variables: {e}"
+    helper.show(msg, helper.discord_status)

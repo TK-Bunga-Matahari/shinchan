@@ -194,10 +194,9 @@ def define_data_structure(
         return employees, tasks, story_points, company_tasks, score, info
 
     except Exception as e:
-        helper.send_discord_notification(
-            f"An error occured in s1_data_structure_CA: {e}"
-        )
-        print(f"An error occurred in s1_data_structure_CA: {e}")
+        msg = f"An error occurred in define data structure: {e}"
+        helper.show(msg, helper.discord_status)
+
         return [], [], {}, {}, {}, {}
 
 

@@ -47,15 +47,7 @@ June 2024
 """
 
 # Import library
-import datetime
-from optimizer import (
-    creds,
-    config,
-    helper,
-    process,
-    create_model,
-    create_objective,
-)
+from optimizer import creds, config, helper, process, create_model, run
 
 
 def main():
@@ -72,17 +64,14 @@ def main():
                 creds.employee_path, creds.task_path, config.overqualification
             )
         )
-        section_1_msg_1 = "Section 1: Define Data Structure Run Successfully"
-        print(section_1_msg_1)
-        helper.send_discord_notification(section_1_msg_1, helper.discord_status)
+        msg_1 = "Section 1: Define Data Structure Run Successfully"
+        helper.show(msg_1, helper.discord_status)
 
         # Section 2
         model = create_model.construct_model(creds.license_params)
         if model:
-            print("Section 2: Construct Model Run Successfully\n\n")
-            helper.send_discord_notification(
-                "Section 2: Construct Model Run Successfully", helper.discord_status
-            )
+            msg_2 = "Section 2: Construct Model Run Successfully"
+            helper.show(msg_2, helper.discord_status)
         else:
             raise Exception("Model construction failed.")
 
@@ -91,11 +80,8 @@ def main():
             model, tasks, employees, company_tasks, config.max_employee_workload
         )
         if x and y and z and max_workload:
-            print("Section 3: Build Decision Variables Run Successfully\n\n")
-            helper.send_discord_notification(
-                "Section 3: Build Decision Variables Run Successfully",
-                helper.discord_status,
-            )
+            msg_3 = "Section 3: Build Decision Variables Run Successfully"
+            helper.show(msg_3, helper.discord_status)
         else:
             raise Exception("Decision variables construction failed.")
 
@@ -111,21 +97,15 @@ def main():
             story_points,
             config.max_employee_workload,
         )
-        print("Section 4: Set Constraints Run Successfully\n\n")
-        helper.send_discord_notification(
-            "Section 4: Set Constraints Run Successfully", helper.discord_status
-        )
+        msg_4 = "Section 4: Set Constraints Run Successfully"
+        helper.show(msg_4, helper.discord_status)
 
         print("\nSolving The Objective...\n\n")
 
         mu_Z_star = {i: 0.00 for i in range(1, 4)}
 
         # Section 5
-        helper.send_discord_notification(
-            "Section 5: Objective 1 START", helper.discord_status
-        )
-        start_time = datetime.datetime.now()
-        mu_Z_1, mu_Z_star, assessment_score_1 = create_objective.objective1(
+        mu_Z_1, mu_Z_star, assessment_score_1 = run.run_objective1(
             model,
             employees,
             company_tasks,
@@ -135,27 +115,9 @@ def main():
             config.max_employee_workload,
             mu_Z_star,
         )
-        end_time = datetime.datetime.now()
-        duration = (end_time - start_time).seconds
-
-        if mu_Z_1 and assessment_score_1 is not None:
-            print("Section 5: Objective 1 Run Successfully\n\n")
-            helper.send_discord_notification(
-                f"Section 5: Objective 1 Run Successfully with {duration} seconds",
-                helper.discord_status,
-            )
-        else:
-            helper.send_discord_notification(
-                "Objective 1 failed.", helper.discord_status
-            )
-            raise Exception("Objective 1 failed.")
 
         # Section 6
-        helper.send_discord_notification(
-            "Section 6: Objective 2 START", helper.discord_status
-        )
-        start_time = datetime.datetime.now()
-        mu_Z_2, mu_Z_star, assessment_score_2 = create_objective.objective2(
+        mu_Z_2, mu_Z_star, assessment_score_2 = run.run_objective2(
             model,
             employees,
             company_tasks,
@@ -165,27 +127,9 @@ def main():
             config.max_employee_workload,
             mu_Z_star,
         )
-        end_time = datetime.datetime.now()
-        duration = (end_time - start_time).seconds
-
-        if mu_Z_2 and assessment_score_2 is not None:
-            helper.send_discord_notification(
-                f"Section 6: Objective 2 Run Successfully with {duration} seconds",
-                helper.discord_status,
-            )
-            print("Section 6: Objective 2 Run Successfully\n\n")
-        else:
-            helper.send_discord_notification(
-                "Objective 2 failed.", helper.discord_status
-            )
-            raise Exception("Objective 2 failed.")
 
         # Section 7
-        helper.send_discord_notification(
-            "Section 7: Objective 3 START", helper.discord_status
-        )
-        start_time = datetime.datetime.now()
-        mu_Z_3, mu_Z_star, assessment_score_3 = create_objective.objective3(
+        mu_Z_3, mu_Z_star, assessment_score_3 = run.run_objective3(
             model,
             employees,
             company_tasks,
@@ -195,27 +139,11 @@ def main():
             max_workload,
             mu_Z_star,
         )
-        end_time = datetime.datetime.now()
-        duration = (end_time - start_time).seconds
-
-        if mu_Z_3 and assessment_score_3 is not None:
-            helper.send_discord_notification(
-                f"Section 7: Objective 3 Run Successfully with {duration} seconds",
-                helper.discord_status,
-            )
-            print("Section 7: Objective 3 Run Successfully\n\n")
-        else:
-            helper.send_discord_notification(
-                "Objective 3 failed.", helper.discord_status
-            )
-            raise Exception("Objective 3 failed.")
 
         # Section 8
         mu_Z = {1: mu_Z_1, 2: mu_Z_2, 3: mu_Z_3}
 
-        helper.send_discord_notification("Section 8: MOO START", helper.discord_status)
-        start_time = datetime.datetime.now()
-        assessment_score_4 = create_objective.MOO(
+        assessment_score_4 = run.run_MOO(
             model,
             employees,
             company_tasks,
@@ -225,17 +153,6 @@ def main():
             mu_Z,
             mu_Z_star,
         )
-        end_time = datetime.datetime.now()
-        duration = (end_time - start_time).seconds
-        if assessment_score_4 is not None:
-            helper.send_discord_notification(
-                f"Section 8: MOO Run Successfully with {duration} seconds",
-                helper.discord_status,
-            )
-            print("Section 8: MOO Run Successfully\n\n")
-        else:
-            helper.send_discord_notification("MOO failed.", helper.discord_status)
-            raise Exception("MOO failed.")
 
         # compare score in every objective with Box Plot
         data = [
@@ -255,20 +172,14 @@ def main():
         process.compare_scores(data, title, "output/score_comaprison")
 
     except Exception as e:
-        helper.send_discord_notification(
-            f"An error occurred: {e}", helper.discord_status
-        )
-        print(f"An error occurred: {e}")
+        msg = f"An error occurred: {e}"
+        helper.show(msg, helper.discord_status)
 
 
 if __name__ == "__main__":
     try:
         main()
-        helper.send_discord_notification(
-            "Script ran successfully.", helper.discord_status
-        )
+        helper.show("Script ran successfully.", helper.discord_status)
     except Exception as e:
         error_message = str(e)
-        helper.send_discord_notification(
-            f"Script failed with error: {error_message}", helper.discord_status
-        )
+        helper.show(f"Script failed with error: {error_message}", helper.discord_status)

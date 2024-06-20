@@ -37,8 +37,9 @@ def construct_model(license_params: Dict[str, Any]) -> Model:
         return model
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in construct_model: {e}")
-        print(f"An error occurred in construct_model: {e}")
+        msg = f"An error occurred in construct_model: {e}"
+        helper.show(msg, helper.discord_status)
+
         return model
 
 
@@ -105,10 +106,9 @@ def decision_variables(
         return x, y, z, max_workload
 
     except Exception as e:
-        helper.send_discord_notification(
-            f"An error occured in define decision_variables: {e}"
-        )
-        print(f"An error occurred in define decision_variables: {e}")
+        msg = f"An error occurred in define decision_variables: {e}"
+        helper.show(msg, helper.discord_status)
+
         return {}, {}, {}, None
 
 
@@ -194,5 +194,5 @@ def constraints(
                     model.addGenConstrIndicator(z[i, j], True, y[j, k], GRB.EQUAL, 1)
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in define constraints: {e}")
-        print(f"An error occurred in define constraints: {e}")
+        msg = f"An error occurred in define constraints: {e}"
+        helper.show(msg, helper.discord_status)

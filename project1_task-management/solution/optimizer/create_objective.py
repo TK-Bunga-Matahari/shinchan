@@ -77,8 +77,9 @@ def objective1(
         return mu_Z_1, mu_Z_star, assessment_score_1
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in s5_objective1: {e}")
-        print(f"An error occurred in s5_objective1: {e}")
+        msg = f"An error occurred in define objective1: {e}"
+        helper.show(msg, helper.discord_status)
+
         return None, mu_Z_star, pd.Series()
 
 
@@ -152,8 +153,9 @@ def objective2(
         return mu_Z_2, mu_Z_star, assessment_score_2
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in s6_objective2: {e}")
-        print(f"An error occurred in s6_objective2: {e}")
+        msg = f"An error occurred in define objective2: {e}"
+        helper.show(msg, helper.discord_status)
+
         return None, mu_Z_star, pd.Series()
 
 
@@ -224,8 +226,9 @@ def objective3(
         return mu_Z_3, mu_Z_star, assessment_score_3
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in s7_objective3: {e}")
-        print(f"An error occurred in s7_objective3: {e}")
+        msg = f"An error occurred in define objective3: {e}"
+        helper.show(msg, helper.discord_status)
+
         return None, mu_Z_star, pd.Series()
 
 
@@ -342,7 +345,7 @@ def MOO(
         return assessment_score_4
 
     except Exception as e:
-        helper.send_discord_notification(f"An error occured in s8_MOO: {e}")
-        print(f"An error occurred in s8_MOO: {e}")
+        msg = f"An error occurred in define MOO: {e}"
+        helper.show(msg, helper.discord_status)
 
         return pd.Series()

@@ -4,8 +4,9 @@ import requests
 import datetime
 import matplotlib.pyplot as plt
 
-from typing import Dict
-from . import config, helper
+from typing import Dict, Any
+from functools import wraps
+from . import config
 
 
 discord_status = False
@@ -28,8 +29,7 @@ def start() -> None:
     print(header)
 
     header_msg = f"Task Assignment Optimization Problem: START with {config.metrics}"
-    print(header_msg)
-    helper.send_discord_notification(header_msg, discord_status)
+    show(header_msg, discord_status)
 
     print("\nExecuting the Steps...\n\n")
 
@@ -38,6 +38,47 @@ def start() -> None:
 
     # Create the directory if it does not exist
     os.makedirs(output_directory, exist_ok=True)
+
+
+def notify_and_time(section_name):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            message = f"{section_name} START"
+            show(message, discord_status)
+
+            start_time = datetime.datetime.now()
+            try:
+                result = func(*args, **kwargs)
+                end_time = datetime.datetime.now()
+                duration = (end_time - start_time).seconds
+                message = f"{section_name} Run Successfully with {duration} seconds"
+                show(message, discord_status)
+
+                return result
+            except Exception as e:
+                message = f"{section_name} failed: {e}"
+                show(message, discord_status)
+                raise
+
+        return wrapper
+
+    return decorator
+
+
+def show(msg: Any, status: bool) -> None:
+    """
+    Show the message into discord and console
+
+    Args:
+        msg (Any): The Message that want to show
+        status (bool): Discord send message status
+
+    Example:
+    >>> show("hello world", True)
+    """
+    send_discord_notification(msg, status)
+    print(msg)
 
 
 def read_license_file(filepath: str) -> Dict[str, str]:

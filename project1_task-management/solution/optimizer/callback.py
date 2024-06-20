@@ -1,4 +1,4 @@
-from optimizer.helper import send_discord_notification
+from optimizer import helper
 from gurobipy import Model, GRB
 
 
@@ -46,17 +46,13 @@ class GapCallback:
                     # Report gap for multiples of 5
                     if percentage_gap > 10 and int(percentage_gap) % 5 == 0:
                         if int(percentage_gap) not in self.reported_gaps:
-                            print(f"Model reached {int(percentage_gap)}% gap.")
-                            send_discord_notification(
-                                f"Model reached {int(percentage_gap)}% gap."
-                            )
+                            msg = f"Model reached {int(percentage_gap)}% gap."
+                            helper.show(msg, helper.discord_status)
                             self.reported_gaps.add(int(percentage_gap))
 
                     # Report gap for each integer when gap <= 10
                     elif percentage_gap <= 10:
                         if int(percentage_gap) not in self.reported_gaps:
-                            print(f"Model reached {percentage_gap}% gap.")
-                            send_discord_notification(
-                                f"Model reached {percentage_gap}% gap."
-                            )
+                            msg = f"Model reached {percentage_gap}% gap."
+                            helper.show(msg, helper.discord_status)
                             self.reported_gaps.add(int(percentage_gap))
