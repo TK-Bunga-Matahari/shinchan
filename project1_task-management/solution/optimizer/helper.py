@@ -1,3 +1,4 @@
+import os
 import datetime
 import matplotlib.pyplot as plt
 
@@ -7,7 +8,7 @@ from . import config, helper
 
 def start() -> None:
     """
-    Startup Information to solve the task assignment optimization problem.
+    Startup Information to solve the task assignment optimization problem and make the directory of output.
 
     Example:
         start()
@@ -26,6 +27,12 @@ def start() -> None:
     helper.send_discord_notification(header_msg)
 
     print("\nExecuting the Steps...\n\n")
+
+    # Define the output directory
+    output_directory = "./output"
+
+    # Create the directory if it does not exist
+    os.makedirs(output_directory, exist_ok=True)
 
 
 def read_license_file(filepath: str) -> Dict[str, str]:
