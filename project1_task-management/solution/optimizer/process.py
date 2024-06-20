@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from . import helper
 from gurobipy import Model
 from typing import Dict, List, Tuple, Any
-from optimizer.tools import CompetencyAssessment, WeightedEuclideanDistance
+from .tools import CompetencyAssessment, WeightedEuclideanDistance
 
 
 def get_employee_tasks(

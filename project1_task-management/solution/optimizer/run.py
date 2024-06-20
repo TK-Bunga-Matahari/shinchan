@@ -1,5 +1,5 @@
-from optimizer import create_objective
-from optimizer.helper import notify_and_time
+from . import create_objective
+from .helper import notify_and_time
 
 
 @notify_and_time("Section 5: Objective 1")

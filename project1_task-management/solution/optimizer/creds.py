@@ -1,6 +1,6 @@
 # import library
 import os
-from optimizer import helper
+from . import helper
 from dotenv import load_dotenv
 
 try:
@@ -24,6 +24,11 @@ try:
     # File Paths from Environment Variables
     employee_path = os.getenv("EMPLOYEE_PATH", "./data/employees_data.csv")
     task_path = os.getenv("TASK_PATH", "./data/tasks_data.csv")
+
+    discord_wh_url = os.getenv("DISCORD_URL")
+
+    if discord_wh_url is None:
+        helper.discord_status = False
 
 except Exception as e:
     license_params = {}

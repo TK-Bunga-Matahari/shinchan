@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 from typing import Dict, Any
 from functools import wraps
-from . import config
+from . import config, creds
 
 
 discord_status = False
@@ -142,7 +142,7 @@ def send_discord_notification(message: str, on: bool) -> None:
     """
     # adjust to yours
     if on:
-        url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
+        url = creds.discord_wh_url
         data = {"content": f"{get_timestamp()} {message}"}
         response = requests.post(
             url, data=json.dumps(data), headers={"Content-Type": "application/json"}

@@ -1,9 +1,8 @@
 import pandas as pd
-import matplotlib.pyplot as plt
+from .callback import GapCallback
+from . import helper, config, process
 from gurobipy import GRB, Model, quicksum
 from typing import Dict, List, Tuple, Any
-from optimizer.callback import GapCallback
-from . import helper, config, process
 
 
 def objective1(
