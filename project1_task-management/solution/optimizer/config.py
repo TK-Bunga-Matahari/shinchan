@@ -29,5 +29,8 @@ try:
     metrics = (
         "CompetencyAssessment" if overqualification else "WeightedEuclideanDistance"
     )
+
+    discord = config["DISCORD"]
+
 except Exception as e:
     print(f"Error in getting the Optimization Parameters: {e}")

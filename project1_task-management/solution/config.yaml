@@ -16,3 +16,6 @@ WEIGHT_OBJ3: 0.07
 
 # Methodology
 OVERQUALIFICATION: true
+
+# Discord Status
+DISCORD: false

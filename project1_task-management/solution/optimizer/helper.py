@@ -9,7 +9,7 @@ from functools import wraps
 from . import config, creds
 
 
-discord_status = False
+discord_status = config.discord
 
 
 def start() -> None:
