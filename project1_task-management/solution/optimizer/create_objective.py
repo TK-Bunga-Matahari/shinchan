@@ -1,6 +1,6 @@
 import pandas as pd
 from .callback import GapCallback
-from . import helper, config, process
+from . import helper, config, utils
 from gurobipy import GRB, Model, quicksum
 from typing import Dict, List, Tuple, Any
 
@@ -54,7 +54,7 @@ def objective1(
 
             x_hat_1 = {}
             for j in employees:
-                result = process.get_employee_tasks(
+                result = utils.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -64,7 +64,7 @@ def objective1(
             x_hat_1 = {}
 
         # Call the process_results function
-        assessment_score_1 = process.process_results(
+        assessment_score_1 = utils.process_results(
             x_hat_1,
             employees,
             story_points,
@@ -130,7 +130,7 @@ def objective2(
 
             x_hat_2 = {}
             for j in employees:
-                result = process.get_employee_tasks(
+                result = utils.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -140,7 +140,7 @@ def objective2(
             x_hat_2 = {}
 
         # Call the process_results function
-        assessment_score_2 = process.process_results(
+        assessment_score_2 = utils.process_results(
             x_hat_2,
             employees,
             story_points,
@@ -203,7 +203,7 @@ def objective3(
 
             x_hat_3 = {}
             for j in employees:
-                result = process.get_employee_tasks(
+                result = utils.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -213,7 +213,7 @@ def objective3(
             x_hat_3 = {}
 
         # Call the process_results function
-        assessment_score_3 = process.process_results(
+        assessment_score_3 = utils.process_results(
             x_hat_3,
             employees,
             story_points,
@@ -322,7 +322,7 @@ def MOO(
 
             x_hat_4 = {}
             for j in employees:
-                result = process.get_employee_tasks(
+                result = utils.get_employee_tasks(
                     j, company_tasks, model, score, story_points, max_employee_workload
                 )
                 if len(result[1]) > 0:
@@ -332,7 +332,7 @@ def MOO(
             x_hat_4 = {}
 
         # Call the process_results function
-        assessment_score_4 = process.process_results(
+        assessment_score_4 = utils.process_results(
             x_hat_4,
             employees,
             story_points,

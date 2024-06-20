@@ -47,7 +47,7 @@ June 2024
 """
 
 # Import library
-from optimizer import creds, config, helper, process, create_model, run
+from optimizer import creds, config, helper, utils, create_model, run
 
 
 def main():
@@ -60,7 +60,7 @@ def main():
     try:
         # Section 1
         employees, tasks, story_points, company_tasks, score, info = (
-            process.define_data_structure(
+            utils.define_data_structure(
                 creds.employee_path, creds.task_path, config.overqualification
             )
         )
@@ -169,7 +169,7 @@ def main():
             "MOO with\nGoal Programming",
         ]
 
-        process.compare_scores(data, title, "output/score_comaprison")
+        utils.compare_scores(data, title, "output/score_comaprison")
 
     except Exception as e:
         msg = f"An error occurred: {e}"
