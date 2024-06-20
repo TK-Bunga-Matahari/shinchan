@@ -157,7 +157,7 @@ def process_results(
         x_hat (Dict[str, Tuple[str, List[str], int, int, List[float]]]): Dictionary of results for each employee.
         employees (List[str]): List of employee IDs.
         story_points (Dict[str, int]): Dictionary of story points for each task.
-        output_file (str): Path to the output CSV file.
+        output_file (str): Path to the output CSV and plot PNG file.
         title (str): Title for the statistics.
         boxplot_title (str): Title for the box plot.
 
@@ -169,7 +169,7 @@ def process_results(
     ...     x_hat_1,
     ...     employees,
     ...     story_points,
-    ...     "./output/result_1.csv",
+    ...     "./output/result_1",
     ...     "Statistics of Objective 1",
     ...     "Assessment Score Boxplot of Objective 1",
     ... )
@@ -191,7 +191,7 @@ def process_results(
         ],
     )
     result.index.name = "employee"
-    result.to_csv(output_file)
+    result.to_csv(output_file + ".csv")
 
     # Statistics of The Objective
     total_employee = len(employees)
@@ -227,8 +227,45 @@ def process_results(
     if len(assessment_score) != 0:
         assessment_score.plot(kind="box")
         plt.title(boxplot_title)
+        plt.savefig(output_file + ".png")
         plt.show()
     else:
         print("No data to show")
 
     return assessment_score
+
+
+def compare_scores(
+    data: List[pd.Series], boxplot_title: List[str], output_file: str
+) -> None:
+    """
+    Compare the score results for every objective with Box Plot.
+
+    Args:
+        data (List[pd.Series]): List of the input data
+        boxplot_title (str): Title for the box plot.
+        output_file (str): Path to the plot PNG file.
+
+    Returns:
+        None
+
+    Example:
+    >>> compare_scores(
+    ...     data,
+    ...     title,
+    ...     "./output/score_comparison",
+    ... )
+    """
+    # Timer for auto close plot
+    timer = threading.Timer(3, helper.close_plot)
+    timer.start()
+
+    plt.figure(figsize=(10, 5))
+    plt.boxplot(
+        data,
+        tick_labels=boxplot_title,
+    )
+    plt.title("Overall Assessment Score Boxplot")
+    plt.xticks(rotation=15)
+    plt.savefig(output_file + ".png")
+    plt.show()

@@ -191,6 +191,8 @@ def main():
             raise Exception("Objective 3 failed.")
 
         # Section 8
+        mu_Z = {1: mu_Z_1, 2: mu_Z_2, 3: mu_Z_3}
+
         helper.send_discord_notification("Section 8: MOO START")
         start_time = datetime.datetime.now()
         assessment_score_4 = create_objective.MOO(
@@ -200,13 +202,8 @@ def main():
             score,
             story_points,
             config.max_employee_workload,
-            mu_Z_1,
-            mu_Z_2,
-            mu_Z_3,
+            mu_Z,
             mu_Z_star,
-            assessment_score_1,
-            assessment_score_2,
-            assessment_score_3,
         )
         end_time = datetime.datetime.now()
         duration = (end_time - start_time).seconds
@@ -218,6 +215,23 @@ def main():
         else:
             helper.send_discord_notification("MOO failed.")
             raise Exception("MOO failed.")
+
+        # compare score in every objective with Box Plot
+        data = [
+            assessment_score_1,
+            assessment_score_2,
+            assessment_score_3,
+            assessment_score_4,
+        ]
+
+        title = [
+            "Objective 1\nMin Idle Employee",
+            "Objective 2\nMax Assessment Score",
+            "Objective 3\nBalancing the Workload",
+            "MOO with\nGoal Programming",
+        ]
+
+        preprocessing.compare_scores(data, title, "output/score_comaprison")
 
     except Exception as e:
         helper.send_discord_notification(f"An error occurred: {e}")
