@@ -1,10 +1,10 @@
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
-from . import report, helper, config
 from gurobipy import GRB, Model, quicksum
 from typing import Dict, List, Tuple, Any
 from optimizer.callback import GapCallback
+from . import report, helper, config, preprocessing
 
 
 def objective1(
@@ -40,7 +40,6 @@ def objective1(
     try:
         # single objective 1
         idle = []
-
         for j in employees:
             idle.append(1 - quicksum(y[j, k] for k in company_tasks.keys()))
 
@@ -50,8 +49,6 @@ def objective1(
         # solve the model
         model.optimize()
 
-        # 5.2.1 Print The Solver Results
-        # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
             print(f"Obj. Value 1 i.e. Total Idle Employees: {model.ObjVal}\n")
@@ -68,65 +65,15 @@ def objective1(
             print("No Solution Found!")
             x_hat_1 = {}
 
-        # 5.3. Show the Solver's Result
-        # Set display options
-        pd.set_option("display.max_rows", 500)
-        pd.set_option("display.max_columns", 500)
-
-        # Convert dictionary to DataFrame and set 'employee' as index
-        result_1 = pd.DataFrame.from_dict(
+        # Call the process_results function
+        assessment_score_1 = preprocessing.process_results(
             x_hat_1,
-            orient="index",
-            columns=[
-                "company",
-                "assigned_task",
-                "sum_sp",
-                "wasted_sp",
-                "assessment_score",
-            ],
+            employees,
+            story_points,
+            "./output/result_1.csv",
+            "Statistics of Objective 1",
+            "Assessment Score Boxplot of Objective 1",
         )
-        result_1.index.name = "employee"
-        result_1.to_csv("./output/result_1.csv")
-
-        # 5.3.1 Statistics of The Objective
-        total_employee = len(employees)
-        total_sp = sum(story_points.values())
-        total_active_employee = len(set(employee for employee in x_hat_1.keys()))
-        total_active_sp = sum(value[2] for value in x_hat_1.values())
-        total_idle_employee = total_employee - total_active_employee
-        total_wasted_sp = total_sp - total_active_sp
-
-        print(f"Total Employee\t\t\t: {total_employee}")
-        print(
-            f"Total Active Employee\t\t: {total_active_employee}\t{(total_active_employee/total_employee)*100:.2f}%"
-        )
-        print(
-            f"Total Idle Employee\t\t: {total_idle_employee}\t{(total_idle_employee/total_employee)*100:.2f}%\n"
-        )
-        print(f"Total Story Points\t\t: {total_sp}")
-        print(
-            f"Total Active Story Points\t: {total_active_sp}\t{(total_active_sp/total_sp)*100:.2f}%"
-        )
-        print(
-            f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
-        )
-
-        # 5.3.2. Distribution With Respect to the Assessment Score
-        # timer for auto close plot
-        timer = threading.Timer(3, helper.close_plot)
-        timer.start()
-
-        # make boxplot for objective 1 with respect to the assessment score
-        assessment_score_1 = (
-            result_1["assessment_score"].explode().reset_index(drop=True)
-        )
-
-        if len(assessment_score_1) != 0:
-            assessment_score_1.plot(kind="box")
-            plt.title("Assessment Score Boxplot of Objective 1")
-            plt.show()
-        else:
-            print("No data to show")
 
         return mu_Z_1, mu_Z_star, assessment_score_1
 
@@ -167,7 +114,6 @@ def objective2(
     """
 
     try:
-        # single objective 2
         mu_Z_2 = quicksum(
             score[j][i] * z[i, j]
             for k, tasks in company_tasks.items()
@@ -176,11 +122,8 @@ def objective2(
         )
         model.setObjective(mu_Z_2, GRB.MAXIMIZE)
 
-        # solve the model
         model.optimize()
 
-        # 6.2.1 Print The Solver Results
-        # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
             print(f"Obj. Value 2 i.e. Total Score: {model.ObjVal}\n")
@@ -197,65 +140,15 @@ def objective2(
             print("No Solution Found!")
             x_hat_2 = {}
 
-        # 6.3. Show the Solver's Result
-        # Set display options
-        pd.set_option("display.max_rows", 500)
-        pd.set_option("display.max_columns", 500)
-
-        # Convert dictionary to DataFrame and set 'employee' as index
-        result_2 = pd.DataFrame.from_dict(
+        # Call the process_results function
+        assessment_score_2 = preprocessing.process_results(
             x_hat_2,
-            orient="index",
-            columns=[
-                "company",
-                "assigned_task",
-                "sum_sp",
-                "wasted_sp",
-                "assessment_score",
-            ],
+            employees,
+            story_points,
+            "./output/result_2.csv",
+            "Statistics of Objective 2",
+            "Assessment Score Boxplot of Objective 2",
         )
-        result_2.index.name = "employee"
-        result_2.to_csv("./output/result_2.csv")
-
-        # 6.3.1 Statistics of The Objective
-        total_employee = len(employees)
-        total_sp = sum(story_points.values())
-        total_active_employee = len(set(employee for employee in x_hat_2.keys()))
-        total_active_sp = sum(value[2] for value in x_hat_2.values())
-        total_idle_employee = total_employee - total_active_employee
-        total_wasted_sp = total_sp - total_active_sp
-
-        print(f"Total Employee\t\t\t: {total_employee}")
-        print(
-            f"Total Active Employee\t\t: {total_active_employee}\t{(total_active_employee/total_employee)*100:.2f}%"
-        )
-        print(
-            f"Total Idle Employee\t\t: {total_idle_employee}\t{(total_idle_employee/total_employee)*100:.2f}%\n"
-        )
-        print(f"Total Story Points\t\t: {total_sp}")
-        print(
-            f"Total Active Story Points\t: {total_active_sp}\t{(total_active_sp/total_sp)*100:.2f}%"
-        )
-        print(
-            f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
-        )
-
-        # 6.3.2. Distribution With Respect to the Assessment Score
-        # timer for auto close plot
-        timer = threading.Timer(3, helper.close_plot)
-        timer.start()
-
-        # make boxplot for objective 1 with respect to the assessment score
-        assessment_score_2 = (
-            result_2["assessment_score"].explode().reset_index(drop=True)
-        )
-
-        if len(assessment_score_2) != 0:
-            assessment_score_2.plot(kind="box")
-            plt.title("Assessment Score Boxplot of Objective 2")
-            plt.show()
-        else:
-            print("No data to show")
 
         return mu_Z_2, mu_Z_star, assessment_score_2
 
@@ -296,15 +189,11 @@ def objective3(
     """
 
     try:
-        # single objective 3
         mu_Z_3 = max_workload
         model.setObjective(mu_Z_3, GRB.MINIMIZE)
 
-        # solve the model
         model.optimize()
 
-        # 7.2.1 Print The Solver Results
-        # Check and process the solution
         if model.status == GRB.OPTIMAL:
             print("Solution Found!")
             print(
@@ -323,66 +212,15 @@ def objective3(
             print("No Solution Found!")
             x_hat_3 = {}
 
-        # 7.3. Show the Solver's Result
-        # Set display options
-        pd.set_option("display.max_rows", 500)
-        pd.set_option("display.max_columns", 500)
-
-        # Convert dictionary to DataFrame and set 'employee' as index
-        result_3 = pd.DataFrame.from_dict(
+        # Call the process_results function
+        assessment_score_3 = preprocessing.process_results(
             x_hat_3,
-            orient="index",
-            columns=[
-                "company",
-                "assigned_task",
-                "sum_sp",
-                "wasted_sp",
-                "assessment_score",
-            ],
+            employees,
+            story_points,
+            "./output/result_3.csv",
+            "Statistics of Objective 3",
+            "Assessment Score Boxplot of Objective 3",
         )
-        result_3.index.name = "employee"
-
-        result_3.to_csv("./output/result_3.csv")
-
-        # 7.3.1 Statistics of The Objective
-        total_employee = len(employees)
-        total_sp = sum(story_points.values())
-        total_active_employee = len(set(employee for employee in x_hat_3.keys()))
-        total_active_sp = sum(value[2] for value in x_hat_3.values())
-        total_idle_employee = total_employee - total_active_employee
-        total_wasted_sp = total_sp - total_active_sp
-
-        print(f"Total Employee\t\t\t: {total_employee}")
-        print(
-            f"Total Active Employee\t\t: {total_active_employee}\t{(total_active_employee/total_employee)*100:.2f}%"
-        )
-        print(
-            f"Total Idle Employee\t\t: {total_idle_employee}\t{(total_idle_employee/total_employee)*100:.2f}%\n"
-        )
-        print(f"Total Story Points\t\t: {total_sp}")
-        print(
-            f"Total Active Story Points\t: {total_active_sp}\t{(total_active_sp/total_sp)*100:.2f}%"
-        )
-        print(
-            f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
-        )
-
-        # 7.3.2. Distribution With Respect to the Assessment Score
-        # timer for auto close plot
-        timer = threading.Timer(3, helper.close_plot)
-        timer.start()
-
-        # make boxplot for objective 1 with respect to the assessment score
-        assessment_score_3 = (
-            result_3["assessment_score"].explode().reset_index(drop=True)
-        )
-
-        if len(assessment_score_3) != 0:
-            assessment_score_3.plot(kind="box")
-            plt.title("Assessment Score Boxplot of Objective 3")
-            plt.show()
-        else:
-            print("No data to show")
 
         return mu_Z_3, mu_Z_star, assessment_score_3
 

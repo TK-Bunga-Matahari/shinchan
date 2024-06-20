@@ -1,4 +1,6 @@
+import threading
 import pandas as pd
+import matplotlib.pyplot as plt
 from . import helper
 from typing import Dict, List, Tuple, Any
 from optimizer.tools import CompetencyAssessment, WeightedEuclideanDistance
@@ -138,3 +140,95 @@ def define_data_structure(
         )
         print(f"An error occurred in s1_data_structure_CA: {e}")
         return [], [], {}, {}, {}, {}
+
+
+def process_results(
+    x_hat: Dict[str, Tuple[str, List[str], int, int, List[float]]],
+    employees: List[str],
+    story_points: Dict[str, int],
+    output_file: str,
+    title: str,
+    boxplot_title: str,
+) -> pd.Series:
+    """
+    Processes the results, saves the CSV file, shows statistics, and plots the box plot.
+
+    Args:
+        x_hat (Dict[str, Tuple[str, List[str], int, int, List[float]]]): Dictionary of results for each employee.
+        employees (List[str]): List of employee IDs.
+        story_points (Dict[str, int]): Dictionary of story points for each task.
+        output_file (str): Path to the output CSV file.
+        title (str): Title for the statistics.
+        boxplot_title (str): Title for the box plot.
+
+    Returns:
+        pd.Series: Series of assessment scores.
+
+    Example:
+    >>> assessment_score_1 = preprocessing.process_results(
+    ...     x_hat_1,
+    ...     employees,
+    ...     story_points,
+    ...     "./output/result_1.csv",
+    ...     "Statistics of Objective 1",
+    ...     "Assessment Score Boxplot of Objective 1",
+    ... )
+    """
+    # Set display options
+    pd.set_option("display.max_rows", 500)
+    pd.set_option("display.max_columns", 500)
+
+    # Convert dictionary to DataFrame and set 'employee' as index
+    result = pd.DataFrame.from_dict(
+        x_hat,
+        orient="index",
+        columns=[
+            "company",
+            "assigned_task",
+            "sum_sp",
+            "wasted_sp",
+            "assessment_score",
+        ],
+    )
+    result.index.name = "employee"
+    result.to_csv(output_file)
+
+    # Statistics of The Objective
+    total_employee = len(employees)
+    total_sp = sum(story_points.values())
+    total_active_employee = len(set(employee for employee in x_hat.keys()))
+    total_active_sp = sum(value[2] for value in x_hat.values())
+    total_idle_employee = total_employee - total_active_employee
+    total_wasted_sp = total_sp - total_active_sp
+
+    print(title)
+    print(f"Total Employee\t\t\t: {total_employee}")
+    print(
+        f"Total Active Employee\t\t: {total_active_employee}\t{(total_active_employee/total_employee)*100:.2f}%"
+    )
+    print(
+        f"Total Idle Employee\t\t: {total_idle_employee}\t{(total_idle_employee/total_employee)*100:.2f}%\n"
+    )
+    print(f"Total Story Points\t\t: {total_sp}")
+    print(
+        f"Total Active Story Points\t: {total_active_sp}\t{(total_active_sp/total_sp)*100:.2f}%"
+    )
+    print(
+        f"Total Wasted Story Points\t: {total_wasted_sp}\t{(total_wasted_sp/total_sp)*100:.2f}%\n"
+    )
+
+    # Timer for auto close plot
+    timer = threading.Timer(3, helper.close_plot)
+    timer.start()
+
+    # Make boxplot for the assessment score
+    assessment_score = result["assessment_score"].explode().reset_index(drop=True)
+
+    if len(assessment_score) != 0:
+        assessment_score.plot(kind="box")
+        plt.title(boxplot_title)
+        plt.show()
+    else:
+        print("No data to show")
+
+    return assessment_score
