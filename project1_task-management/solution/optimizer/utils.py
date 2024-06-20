@@ -2,7 +2,7 @@ import threading
 import pandas as pd
 import matplotlib.pyplot as plt
 from . import helper
-from gurobipy import Model
+from gurobipy import Model, GRB
 from typing import Dict, List, Tuple, Any
 from .tools import CompetencyAssessment, WeightedEuclideanDistance
 
@@ -200,6 +200,82 @@ def define_data_structure(
         return [], [], {}, {}, {}, {}
 
 
+def model_results(
+    model,
+    employees,
+    company_tasks,
+    score,
+    story_points,
+    max_employee_workload,
+    mu_Z_star,
+    objective_index: int,
+    result_file_path: str,
+    statistics_title: str,
+    boxplot_title: str,
+) -> Tuple[Dict[int, float], pd.Series]:
+    """
+    Process the model results, update mu_Z_star and generate assessment score.
+
+    Args:
+        model: The optimization model.
+        employees: List of employees.
+        company_tasks: List of company tasks.
+        score: Dictionary of metric scores for each employee-task pair.
+        story_points: Dictionary of story points for each task.
+        max_employee_workload: Maximum workload per employee.
+        mu_Z_star: Dictionary to store objective values.
+        objective_index: The index of the current objective.
+        result_file_path: Path to save the result file.
+        statistics_title: Title for the statistics section.
+        boxplot_title: Title for the boxplot.
+
+    Returns:
+        Tuple: Updated mu_Z_star and assessment score.
+
+    Example:
+    >>> mu_Z_star, assessment_score_1 = model_results(
+    ...     model,
+    ...     employees,
+    ...     company_tasks,
+    ...     score,
+    ...     story_points,
+    ...     max_employee_workload,
+    ...     mu_Z_star,
+    ...     1
+    ...     "./output/result_1",
+    ...     "Statistics of Objective 1",
+    ...     "Assessment Score Boxplot of Objective 1",
+    ... )
+    """
+    if model.status == GRB.OPTIMAL:
+        print("Solution Found!")
+        print(f"Obj. Value {objective_index} i.e. Objective Value: {model.ObjVal}\n")
+        mu_Z_star[objective_index] = model.ObjVal
+
+        x_hat = {}
+        for j in employees:
+            result = get_employee_tasks(
+                j, company_tasks, model, score, story_points, max_employee_workload
+            )
+            if len(result[1]) > 0:
+                x_hat[j] = result
+    else:
+        print("No Solution Found!")
+        x_hat = {}
+
+    # Call the process_results function
+    assessment_score = process_results(
+        x_hat,
+        employees,
+        story_points,
+        result_file_path,
+        statistics_title,
+        boxplot_title,
+    )
+
+    return mu_Z_star, assessment_score
+
+
 def process_results(
     x_hat: Dict[str, Tuple[str, List[str], int, int, List[float]]],
     employees: List[str],
@@ -223,8 +299,8 @@ def process_results(
         pd.Series: Series of assessment scores.
 
     Example:
-    >>> assessment_score_1 = preprocessing.process_results(
-    ...     x_hat_1,
+    >>> assessment_score = process_results(
+    ...     x_hat,
     ...     employees,
     ...     story_points,
     ...     "./output/result_1",

@@ -1,3 +1,5 @@
+# optimizer/create_objective.py
+
 import pandas as pd
 from .callback import GapCallback
 from . import helper, config, utils
@@ -34,7 +36,6 @@ def objective1(
     Example:
         mu_Z_1, mu_Z_star, assessment_score_1 = s5_objective1(model, employees, company_tasks, y, score, story_points, max_employee_workload, mu_Z_star)
     """
-
     try:
         # single objective 1
         idle = []
@@ -47,27 +48,16 @@ def objective1(
         # solve the model
         model.optimize()
 
-        if model.status == GRB.OPTIMAL:
-            print("Solution Found!")
-            print(f"Obj. Value 1 i.e. Total Idle Employees: {model.ObjVal}\n")
-            mu_Z_star[1] = model.ObjVal
-
-            x_hat_1 = {}
-            for j in employees:
-                result = utils.get_employee_tasks(
-                    j, company_tasks, model, score, story_points, max_employee_workload
-                )
-                if len(result[1]) > 0:
-                    x_hat_1[j] = result
-        else:
-            print("No Solution Found!")
-            x_hat_1 = {}
-
-        # Call the process_results function
-        assessment_score_1 = utils.process_results(
-            x_hat_1,
+        # Process results using utility function
+        mu_Z_star, assessment_score_1 = utils.model_results(
+            model,
             employees,
+            company_tasks,
+            score,
             story_points,
+            max_employee_workload,
+            mu_Z_star,
+            1,
             "./output/result_1",
             "Statistics of Objective 1",
             "Assessment Score Boxplot of Objective 1",
@@ -111,7 +101,6 @@ def objective2(
     Example:
         mu_Z_2, mu_Z_star, assessment_score_2 = s6_objective2(model, employees, company_tasks, z, score, story_points, max_employee_workload, mu_Z_star)
     """
-
     try:
         mu_Z_2 = quicksum(
             score[j][i] * z[i, j]
@@ -123,27 +112,16 @@ def objective2(
 
         model.optimize()
 
-        if model.status == GRB.OPTIMAL:
-            print("Solution Found!")
-            print(f"Obj. Value 2 i.e. Total Score: {model.ObjVal}\n")
-            mu_Z_star[2] = model.ObjVal
-
-            x_hat_2 = {}
-            for j in employees:
-                result = utils.get_employee_tasks(
-                    j, company_tasks, model, score, story_points, max_employee_workload
-                )
-                if len(result[1]) > 0:
-                    x_hat_2[j] = result
-        else:
-            print("No Solution Found!")
-            x_hat_2 = {}
-
-        # Call the process_results function
-        assessment_score_2 = utils.process_results(
-            x_hat_2,
+        # Process results using utility function
+        mu_Z_star, assessment_score_2 = utils.model_results(
+            model,
             employees,
+            company_tasks,
+            score,
             story_points,
+            max_employee_workload,
+            mu_Z_star,
+            2,
             "./output/result_2",
             "Statistics of Objective 2",
             "Assessment Score Boxplot of Objective 2",
@@ -187,36 +165,22 @@ def objective3(
     Example:
         mu_Z_3, mu_Z_star, assessment_score_3 = s7_objective3(model, employees, company_tasks, score, story_points, max_employee_workload, max_workload, mu_Z_star)
     """
-
     try:
         mu_Z_3 = max_workload
         model.setObjective(mu_Z_3, GRB.MINIMIZE)
 
         model.optimize()
 
-        if model.status == GRB.OPTIMAL:
-            print("Solution Found!")
-            print(
-                f"Obj. Value 3 i.e. Maximum Story Points Each Employee: {model.ObjVal}\n"
-            )
-            mu_Z_star[3] = model.ObjVal
-
-            x_hat_3 = {}
-            for j in employees:
-                result = utils.get_employee_tasks(
-                    j, company_tasks, model, score, story_points, max_employee_workload
-                )
-                if len(result[1]) > 0:
-                    x_hat_3[j] = result
-        else:
-            print("No Solution Found!")
-            x_hat_3 = {}
-
-        # Call the process_results function
-        assessment_score_3 = utils.process_results(
-            x_hat_3,
+        # Process results using utility function
+        mu_Z_star, assessment_score_3 = utils.model_results(
+            model,
             employees,
+            company_tasks,
+            score,
             story_points,
+            max_employee_workload,
+            mu_Z_star,
+            3,
             "./output/result_3",
             "Statistics of Objective 3",
             "Assessment Score Boxplot of Objective 3",
@@ -246,22 +210,21 @@ def MOO(
 
     Args:
         model (Model): The optimization model.
-        employees (List[str]): List of employee IDs.
-        company_tasks (Dict[str, List[int]]): Dictionary of company tasks.
-        score (List[List[float]]): List of metric scores for each employee-task pair.
-        story_points (Dict[int, int]): List of story points for each task.
-        max_employee_workload (int): The maximum workload an employee can handle.
-        mu_Z (Dict[int, float): Objective value for every objective.
-        mu_Z_star (Dict[int, float]): Dictionary to store objective values.
+        employees: List of employees.
+        company_tasks: List of company tasks.
+        score: List of metric scores for each employee-task pair.
+        story_points: List of story points for each task.
+        max_employee_workload: The maximum workload an employee can handle.
+        mu_Z: Objective value for every objective.
+        mu_Z_star: Dictionary to store objective values.
 
     Returns:
         Any: Assessment score for the multi-objective approach.
 
     Example:
-    >>> mu_Z = {1: mu_Z_1, 2: mu_Z_2, 3: mu_Z_3}
-    >>> assessment_score_4 = s8_MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z, mu_Z_star)
+        mu_Z = {1: mu_Z_1, 2: mu_Z_2, 3: mu_Z_3}
+        assessment_score_4 = s8_MOO(model, employees, company_tasks, score, story_points, max_employee_workload, mu_Z, mu_Z_star)
     """
-
     try:
         # define weight dictionary for each objective
         Weight = {
@@ -315,27 +278,16 @@ def MOO(
         model.optimize(gap_callback)
 
         # 8.3. Print The Solver Results
-        # Check and process the solution
-        if model.status == GRB.OPTIMAL:
-            print("Solution Found!")
-            print(f"Obj. Value 5 i.e. Deviation: {model.ObjVal}\n")
-
-            x_hat_4 = {}
-            for j in employees:
-                result = utils.get_employee_tasks(
-                    j, company_tasks, model, score, story_points, max_employee_workload
-                )
-                if len(result[1]) > 0:
-                    x_hat_4[j] = result
-        else:
-            print("No Solution Found!")
-            x_hat_4 = {}
-
-        # Call the process_results function
-        assessment_score_4 = utils.process_results(
-            x_hat_4,
+        # Process results using utility function
+        mu_Z_star, assessment_score_4 = utils.model_results(
+            model,
             employees,
+            company_tasks,
+            score,
             story_points,
+            max_employee_workload,
+            mu_Z_star,
+            4,
             "./output/result_MOO",
             "Statistics of Multi-Objective",
             "Assessment Score Boxplot of Multi-Objective",
