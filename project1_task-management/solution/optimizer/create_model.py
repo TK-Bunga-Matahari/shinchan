@@ -73,24 +73,18 @@ def decision_variables(
     """
 
     try:
-        # Decision variable x to represent employee j is assigned to task i in project k
-        x = {}
+        x = (
+            {}
+        )  # Decision variable x to represent employee j is assigned to task i in project k
+        y = {}  # Decision variable y to represent employee j is assigned to project k
+        z = {}  # Decision variable z to represent task i is assigned to employee j
+
         for k, task in company_tasks.items():
             for i in task:
                 for j in employees:
                     x[(i, j, k)] = model.addVar(vtype=GRB.BINARY, name=f"x_{i}_{j}_{k}")
-
-        # Decision variable y to represent employee j is assigned to project k
-        y = {}
-        for j in employees:
-            for k in company_tasks.keys():
-                y[(j, k)] = model.addVar(vtype=GRB.BINARY, name=f"y_{j}_{k}")
-
-        # Decision variable z to represent task i is assigned to employee j
-        z = {}
-        for i in tasks:
-            for j in employees:
-                z[(i, j)] = model.addVar(vtype=GRB.BINARY, name=f"z_{i}_{j}")
+                    y[(j, k)] = model.addVar(vtype=GRB.BINARY, name=f"y_{j}_{k}")
+                    z[(i, j)] = model.addVar(vtype=GRB.BINARY, name=f"z_{i}_{j}")
 
         # Decision variable for max workload that can be assigned
         max_workload = model.addVar(
