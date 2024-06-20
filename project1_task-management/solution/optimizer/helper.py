@@ -1,9 +1,14 @@
 import os
+import json
+import requests
 import datetime
 import matplotlib.pyplot as plt
 
 from typing import Dict
 from . import config, helper
+
+
+discord_status = False
 
 
 def start() -> None:
@@ -24,7 +29,7 @@ def start() -> None:
 
     header_msg = f"Task Assignment Optimization Problem: START with {config.metrics}"
     print(header_msg)
-    helper.send_discord_notification(header_msg)
+    helper.send_discord_notification(header_msg, discord_status)
 
     print("\nExecuting the Steps...\n\n")
 
@@ -83,24 +88,26 @@ def get_timestamp() -> str:
     return datetime.datetime.now().strftime("(%H.%M %d/%m/%Y)")
 
 
-def send_discord_notification(message: str) -> None:
+def send_discord_notification(message: str, on: bool) -> None:
     """
     Sends a notification with the given message to a Discord channel.
 
     Args:
         message (str): The message to be sent.
+        on (bool): Send Message status is on
 
     Example:
         send_discord_notification("Model reached 5% gap.")
     """
     # adjust to yours
-    url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
-    data = {"content": f"{get_timestamp()} {message}"}
-    # response = requests.post(
-    #     url, data=json.dumps(data), headers={"Content-Type": "application/json"}
-    # )
+    if on:
+        url = "https://discord.com/api/webhooks/1245288786024206398/ZQEM6oSRWOYw0DV9_3WUNGYIk7yZQ-M1OdsZU6J3DhUKhZ-qmi8ecqJRAVBRqwpJt0q8"
+        data = {"content": f"{get_timestamp()} {message}"}
+        response = requests.post(
+            url, data=json.dumps(data), headers={"Content-Type": "application/json"}
+        )
 
-    # if response.status_code == 204:
-    #     print("Notification sent successfully.")
-    # else:
-    #     print("Failed to send notification.")
+        if response.status_code == 204:
+            print("Notification sent successfully.")
+        else:
+            print("Failed to send notification.")
