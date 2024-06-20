@@ -1,46 +1,46 @@
-import { FcGoogle } from "react-icons/fc";
-import React from "react";
-import '../index.css';
-import { useNavigate } from "react-router-dom";
+// import { FcGoogle } from "react-icons/fc";
+// import React from "react";
+// import '../index.css';
+// import { useNavigate } from "react-router-dom";
 
-const Login = () => {
-    const navigate = useNavigate();
+// const Login = () => {
+//     const navigate = useNavigate();
 
-    const handleGoogleLogin = () => {
-        console.log("Google login clicked");
-    }
+//     const handleGoogleLogin = () => {
+//         console.log("Google login clicked");
+//     }
 
-    const handleHome = () => {
-        navigate("/menu");
-    }
+//     const handleHome = () => {
+//         navigate("/menu");
+//     }
 
-    const handleAddress = () => {
-        navigate("/address");
-    }
+//     const handleAddress = () => {
+//         navigate("/address");
+//     }
 
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="text-center">
-                <h1 className="text-4xl font-bold mb-4">Optimization Project</h1>
-                <p className="text-lg mb-8">TK Bunga Matahari</p>
-                <button
-                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center justify-center mx-auto"
-                    onClick={() => {
-                        // Handle Google login logic here
-                        handleGoogleLogin();
-                        handleHome();
-                    }}
-                >
-                    <FcGoogle className="mr-2" />
-                    Login
-                </button>
-                <p className="text-sm mt-4">Are you have address? <a href="" onClick={handleAddress}>Click here</a></p>
-            </div>
-        </div>
-    );
-}
+//     return (
+//         <div className="flex items-center justify-center min-h-screen bg-gray-100">
+//             <div className="text-center">
+//                 <h1 className="text-4xl font-bold mb-4">Optimization Project</h1>
+//                 <p className="text-lg mb-8">TK Bunga Matahari</p>
+//                 <button
+//                     className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center justify-center mx-auto"
+//                     onClick={() => {
+//                         // Handle Google login logic here
+//                         handleGoogleLogin();
+//                         handleHome();
+//                     }}
+//                 >
+//                     <FcGoogle className="mr-2" />
+//                     Login
+//                 </button>
+//                 <p className="text-sm mt-4">Are you have address? <a href="" onClick={handleAddress}>Click here</a></p>
+//             </div>
+//         </div>
+//     );
+// }
 
-export default Login;
+// export default Login;
 
 //=========================================================//
 
@@ -144,3 +144,85 @@ export default Login;
 // }
 
 // export default Login;
+
+
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { FcGoogle } from "react-icons/fc";
+import '../index.css';
+import { auth } from '../firebase-config';
+// import firebase from "firebase/app";
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useEffect } from "react";
+
+
+const Login = () => {
+    const navigate = useNavigate();
+
+    // const googleProvider = new GoogleAuthProvider();
+
+    useEffect(() => {
+        const signInWithGoogle = () => {
+            const googleProvider = new GoogleAuthProvider();
+            googleProvider.setCustomParameters({ 'hd': 'satudata.digital' });
+
+            signInWithPopup(auth, googleProvider)
+                .then((res) => {
+                    console.log('User signed in:', res.user);
+                    navigate('/menu'); // Redirect after successful login
+                })
+                .catch((error) => {
+                    console.error('Error during sign-in:', error);
+                });
+        };
+
+        const loginButton = document.getElementById('login');
+
+        if (loginButton) {
+            loginButton.addEventListener('click', signInWithGoogle);
+        }
+
+        return () => {
+            // Safely remove the event listener if the element still exists
+            if (loginButton) {
+                loginButton.removeEventListener('click', signInWithGoogle);
+            }
+        };
+    }, [navigate]); // Only re-run the effect if navigate changes
+
+    // const signInWithGoogle = () => {
+    //     signInWithPopup(auth, googleProvider)
+    //         .then((res) => {
+    //             console.log('[Login Success] currentUser:', res.user);
+    //             navigate('/menu'); // Redirect after successful login
+    //         })
+    //         .catch((error) => {
+    //         console.log('[Login Failed]', error);
+    //     });
+    // };
+
+    const handleAddress = (event) => {
+        event.preventDefault(); // Prevent default link behavior
+        navigate("/address");
+    };
+
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gray-100">
+            <div className="text-center">
+                <h1 className="text-4xl font-bold mb-4">Optimization Project</h1>
+                <p className="text-lg mb-8">TK Bunga Matahari</p>
+                <button
+                    id="login"
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center justify-center mx-auto"
+                    // onClick={signInWithGoogle}
+                >
+                    <FcGoogle className="mr-2" />
+                    Login
+                </button>
+                <p className="text-sm mt-4">Do you have an address? <a href="#" onClick={handleAddress}>Click here</a></p>
+            </div>
+        </div>
+    );
+}
+
+export default Login;
