@@ -1,5 +1,5 @@
 """
-Module Name: yippy.py
+Module Name: tools.py
 Objective: Implement the CompetencyAssessment and WeightedEuclideanDistance classes to calculate skill metrics scores for each employee and rank them based on their scores.
 
 Description:
@@ -66,7 +66,6 @@ Last Modified:
 June 2024
 """
 
-import math
 import heapq
 import numpy as np
 import pandas as pd

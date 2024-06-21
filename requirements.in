@@ -7,3 +7,4 @@ matplotlib
 ace
 python-dotenv
 requests
+pyyaml
