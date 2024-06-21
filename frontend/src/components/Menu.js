@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import image from '../icon/task_2098402.svg';
 import image2 from '../icon/profit_7172432.svg';
+import { auth } from '../firebase-config';
+import { signOut } from 'firebase/auth';
 
 const Menu = () => {
 
@@ -27,7 +29,19 @@ const Menu = () => {
     const handleProgress = () => {
         navigate("/menu/progress");
     }
-
+    // const handleLogout = () => {
+    //     navigate("/");
+    // }
+    const handleLogout = () => {
+        signOut(auth)
+            .then(() => {
+                console.log('User signed out');
+                navigate('/'); // Navigate to home or login page
+            })
+            .catch((error) => {
+                console.error('Error during sign-out:', error);
+            });
+    };
 
     return (
         <div className="bg-gray-100 min-h-screen flex">
@@ -59,6 +73,14 @@ const Menu = () => {
                             Track progress
                         </button>
                     </li>
+                    <li>
+                        <button
+                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
+                        onClick={handleLogout}
+                        >
+                            Logout
+                        </button>
+                    </li>
                 </ul>
             </div>
 
@@ -73,7 +95,7 @@ const Menu = () => {
                     </button>
                     <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex flex-col items-center justify-center">
                         <img src={image2} className='taskImage mb-2' alt="Portfolio Allocation" />
-                        Portfolio Allocation
+                        Portfolio Stock Allocation
                     </button>
                 </div>
                 </div>

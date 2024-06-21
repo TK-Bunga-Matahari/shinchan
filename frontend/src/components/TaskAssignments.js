@@ -35,16 +35,46 @@ const TaskAssignments = () => {
     const [taskFile, setTaskFile] = useState(null);
     const [licensedFile, setLicensedFile] = useState(null);
 
+    // 
+    
     const handleFileUpload = async () => {
         if (!employeeFile || !taskFile || !licensedFile) {
-            console.error('Both employee, task, license files must be selected');
-            return;
+            console.error('Both employee, task, and license files must be selected');
+            return;  
         }
 
         const formData = new FormData();
         formData.append('employeeFile', employeeFile);
         formData.append('taskFile', taskFile);
         formData.append('licensedFile', licensedFile);
+
+        // Ensure all elements are found before trying to access their values
+        // const overqualification = document.querySelector('input[name="overqualification"]:checked');
+        // const maxWorkload = document.querySelector('input[name="maxWorkload"]');
+        // const weightIdle = document.querySelector('input[name="weightIdle"]');
+        // const weightScore = document.querySelector('input[name="weightScore"]');
+        // const weightBalance = document.querySelector('input[name="weightBalance"]');
+        // const presolve = document.querySelector('input[name="presolve"]');
+        // const heuristics = document.querySelector('input[name="heuristics"]');
+        // const mipFocus = document.querySelector('input[name="mipFocus"]');
+        // const mipGap = document.querySelector('input[name="mipGap"]');
+        // const threads = document.querySelector('input[name="threads"]');
+
+        // if (overqualification && maxWorkload && weightIdle && weightScore && weightBalance && presolve && heuristics && mipFocus && mipGap && threads) {
+        //     formData.append('overqualification', overqualification.value);
+        //     formData.append('maxWorkload', maxWorkload.value);
+        //     formData.append('weightIdle', weightIdle.value);
+        //     formData.append('weightScore', weightScore.value);
+        //     formData.append('weightBalance', weightBalance.value);
+        //     formData.append('presolve', presolve.value);
+        //     formData.append('heuristics', heuristics.value);
+        //     formData.append('mipFocus', mipFocus.value);
+        //     formData.append('mipGap', mipGap.value);
+        //     formData.append('threads', threads.value);
+        // } else {
+        //     console.error('One or more parameters are missing, please check all inputs are correctly filled.');
+        //     return;
+        // }
 
         try {
             const idToken = await auth.currentUser.getIdToken(true);

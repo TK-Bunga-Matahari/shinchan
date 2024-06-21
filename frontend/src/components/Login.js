@@ -152,7 +152,7 @@ import { FcGoogle } from "react-icons/fc";
 import '../index.css';
 import { auth } from '../firebase-config';
 // import firebase from "firebase/app";
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { useEffect } from "react";
 
 
@@ -190,6 +190,17 @@ const Login = () => {
         };
     }, [navigate]); // Only re-run the effect if navigate changes
 
+    const handleLogout = () => {
+        signOut(auth)
+            .then(() => {
+                console.log('User signed out');
+                navigate('/'); // Navigate to home or login page
+            })
+            .catch((error) => {
+                console.error('Error during sign-out:', error);
+            });
+    };
+
     // const signInWithGoogle = () => {
     //     signInWithPopup(auth, googleProvider)
     //         .then((res) => {
@@ -218,6 +229,12 @@ const Login = () => {
                 >
                     <FcGoogle className="mr-2" />
                     Login
+                </button>
+                <button
+                    onClick={handleLogout}
+                    className="bg-red-200 hover:bg-red-300 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow mt-4"
+                >
+                    Logout
                 </button>
                 <p className="text-sm mt-4">Do you have an address? <a href="#" onClick={handleAddress}>Click here</a></p>
             </div>
