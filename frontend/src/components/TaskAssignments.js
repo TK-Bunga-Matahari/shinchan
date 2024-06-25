@@ -2,19 +2,12 @@ import '../index.css';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { auth } from '../firebase-config';
+import Sidebar from '../layouts/sidebar';
+
 
 const TaskAssignments = () => {
-    const navigate = useNavigate();
     const [showPopup, setShowPopup] = useState(false);
     const [userId, setUserId] = useState('');
-
-    const handleMenu = () => {
-        navigate("/menu");
-    }
-
-    const handleResult = () => {
-        navigate("/menu/result");
-    }
 
     const handleGenerate = async () => {
         // Simulate fetching user ID from backend
@@ -25,10 +18,6 @@ const TaskAssignments = () => {
 
     const closePopup = () => {
         setShowPopup(false);
-    }
-
-    const handleProgress = () => {
-        navigate("/menu/progress");
     }
 
     const [employeeFile, setEmployeeFile] = useState(null);
@@ -99,37 +88,7 @@ const TaskAssignments = () => {
 
     return (
         <div className="bg-gray-100 min-h-screen flex">
-            {/* Sidebar */}
-            <div className="w-60 bg-white shadow-md px-5 py-7">
-                <h1 className="text-xl font-semibold mb-10">Optimization</h1>
-                <ul className="space-y-4">
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleMenu}
-                        >
-                        Toolbox
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleResult}
-                        >
-                        Results
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleProgress}
-                        >
-                            Track progress
-                        </button>
-                    </li>
-                </ul>
-            </div>
-
+            <Sidebar />
             {/* Main Content */}
             <div className="flex-grow p-10">
                 <div className="max-w-4xl mx-auto">

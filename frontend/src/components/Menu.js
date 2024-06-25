@@ -5,6 +5,7 @@ import image from '../icon/task_2098402.svg';
 import image2 from '../icon/profit_7172432.svg';
 import { auth } from '../firebase-config';
 import { signOut } from 'firebase/auth';
+import Sidebar from '../layouts/sidebar';
 
 const Menu = () => {
 
@@ -18,71 +19,9 @@ const Menu = () => {
         navigate("/menu/portfolioallocation");
     }
 
-    const handleMenu = () => {
-        navigate("/menu");
-    }
-
-    const handleResult = () => {
-        navigate("/menu/result");
-    }
-
-    const handleProgress = () => {
-        navigate("/menu/progress");
-    }
-    // const handleLogout = () => {
-    //     navigate("/");
-    // }
-    const handleLogout = () => {
-        signOut(auth)
-            .then(() => {
-                console.log('User signed out');
-                navigate('/'); // Navigate to home or login page
-            })
-            .catch((error) => {
-                console.error('Error during sign-out:', error);
-            });
-    };
-
     return (
         <div className="bg-gray-100 min-h-screen flex">
-            {/* Sidebar */}
-            <div className="w-60 bg-white shadow-md px-5 py-7">
-                <h1 className="text-xl font-semibold mb-10">Optimization</h1>
-                <ul className="space-y-4">
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleMenu}
-                        >
-                        Toolbox
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleResult}
-                        >
-                        Results
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleProgress}
-                        >
-                            Track progress
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                        className="text-gray-700 hover:text-gray-900 bg-transparent border-none cursor-pointer"
-                        onClick={handleLogout}
-                        >
-                            Logout
-                        </button>
-                    </li>
-                </ul>
-            </div>
+            <Sidebar />
 
             {/* Main Content */}
             <div className="flex-grow p-10">
