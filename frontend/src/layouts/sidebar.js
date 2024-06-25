@@ -16,9 +16,14 @@ const Sidebar = () => {
     const handleProgress = () => {
         navigate("/menu/progress");
     }
+
+    const handleHome = () => {
+        navigate("/");
+    }
+
     return (
         <div className="w-60 bg-white shadow-md px-5 py-7">
-                <h1 className="text-xl font-semibold mb-10">Optimization</h1>
+                <button className="text-xl font-semibold mb-10" onClick={handleHome}>Optimization</button>
                 <ul className="space-y-4">
                     <li>
                         <button
