@@ -43,6 +43,7 @@ const TaskAssignments = () => {
 
         document.querySelectorAll('input[type="file"]').forEach(input => input.value = '');
         document.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
+        document.querySelectorAll('input[type="radio"]').forEach(input => input.checked = false);
     };
     
     const handleFileUpload = async () => {
@@ -61,7 +62,7 @@ const TaskAssignments = () => {
         const formData = new FormData();
         formData.append('employeeFile', employeeFile);
         formData.append('taskFile', taskFile);
-        formData.append('licensedFile', licensedFile);
+        formData.append('licenseFile', licensedFile);
         formData.append('overqualification', document.querySelector('input[name="overqualification"]:checked').value);
         formData.append('maxEmployeeWorkload', document.querySelector('input[placeholder="20"]').value);
         formData.append('weightIdle', document.querySelector('input[placeholder="0"]').value);
@@ -76,7 +77,7 @@ const TaskAssignments = () => {
 
         try {
             const idToken = await auth.currentUser.getIdToken(true);
-            const response = await fetch('https://my-backend-ev6a2mrxbq-et.a.run.app/upload', {
+            const response = await fetch('https://3303-36-92-133-90.ngrok-free.app/upload', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -91,10 +92,11 @@ const TaskAssignments = () => {
             const data = await response.json();
             console.log('Files uploaded successfully:', data);
             alert('Files uploaded successfully');
-            resetInputs();
+            // resetInputs();
         } catch (error) {
             console.error('Error:', error.message);
             alert('Upload failed: ' + error.message);
+            // resetInputs();
         }
 
     };
