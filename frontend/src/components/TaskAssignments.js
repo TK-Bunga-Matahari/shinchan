@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { auth } from '../firebase-config';
 import Sidebar from '../layouts/sidebar';
+import tooltip from 'react-tooltip';
+import Question from '../icon/question.svg';
 
 
 const TaskAssignments = () => {
@@ -13,13 +15,34 @@ const TaskAssignments = () => {
     const [employeeFile, setEmployeeFile] = useState(null);
     const [taskFile, setTaskFile] = useState(null);
     const [licensedFile, setLicensedFile] = useState(null);
+    const [overqualification, setOverqualification] = useState(false);
+    const [maxEmployeeWorkload, setMaxEmployeeWorkload] = useState(null);
+    const [weightIdle, setWeightIdle] = useState(null);
+    const [weightScore, setWeightScore] = useState(null);
+    const [weightBalance, setWeightBalance] = useState(null);
+    const [presolve, setPresolve] = useState(null);
+    const [heuristics, setHeuristics] = useState(null);
+    const [MIPFocus, setMIPFocus] = useState(null);
+    const [MIPGap, setMIPGap] = useState(null);
+    const [threads, setThreads] = useState(null);
 
     const resetInputs = () => {
         setEmployeeFile(null);
         setTaskFile(null);
         setLicensedFile(null);
+        setOverqualification(false);
+        setMaxEmployeeWorkload(null);
+        setWeightIdle(null);
+        setWeightScore(null);
+        setWeightBalance(null);
+        setPresolve(null);
+        setHeuristics(null);
+        setMIPFocus(null);
+        setMIPGap(null);
+        setThreads(null);
 
         document.querySelectorAll('input[type="file"]').forEach(input => input.value = '');
+        document.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
     };
     
     const handleFileUpload = async () => {
@@ -39,6 +62,17 @@ const TaskAssignments = () => {
         formData.append('employeeFile', employeeFile);
         formData.append('taskFile', taskFile);
         formData.append('licensedFile', licensedFile);
+        formData.append('overqualification', document.querySelector('input[name="overqualification"]:checked').value);
+        formData.append('maxEmployeeWorkload', document.querySelector('input[placeholder="20"]').value);
+        formData.append('weightIdle', document.querySelector('input[placeholder="0"]').value);
+        formData.append('weightScore', document.querySelector('input[placeholder="0"]').value);
+        formData.append('weightBalance', document.querySelector('input[placeholder="0"]').value);
+        formData.append('presolve', document.querySelector('input[placeholder="2"]').value);
+        formData.append('heuristics', document.querySelector('input[placeholder="0.8"]').value);
+        formData.append('MIPFocus', document.querySelector('input[placeholder="1"]').value);
+        formData.append('MIPGap', document.querySelector('input[placeholder="0.01"]').value);
+        formData.append('threads', document.querySelector('input[placeholder="2"]').value);
+
 
         try {
             const idToken = await auth.currentUser.getIdToken(true);
@@ -81,6 +115,8 @@ const TaskAssignments = () => {
         </div>
     }
 
+    const [showTooltip, setShowTooltip] = useState(false);
+
     return (
         <div className="bg-gray-100 min-h-screen flex">
             <Sidebar />
@@ -103,7 +139,20 @@ const TaskAssignments = () => {
                             </label>
                         </div>
                         <div>
-                            <label >Max Employee Workload</label>
+                            {/* <div className='flex items-center justify-between'> */}
+                                <label className='flex-1'>
+                                    Max Employee Workload <span 
+                                    onMouseEnter={() => setShowTooltip(true)}
+                                    onMouseLeave={() => setShowTooltip(false)}>
+                                        <button className='ml-2'>?</button>
+                                        {showTooltip && (
+                                            <div className='absolute bg-gray-700 text-white text-xs rounded p-2'>
+                                            Informasi mengenai beban kerja maksimal karyawan.
+                                            </div>
+                                        )}
+                                        </span>
+                                </label>
+                            {/* </div> */}
                             <input type="number" className="border-2 border-black rounded w-full" step="0.01" placeholder="20"/>
                         </div>
                         <div>
@@ -159,6 +208,15 @@ const TaskAssignments = () => {
                         <div>
                             <label>Upload Licensed File</label>
                             <input type="file" className="mb-4 py-3" accept=".lic" onChange={e => setLicensedFile(e.target.files[0])} />
+                            <div>
+
+                                {/* <textarea
+                                    className="w-full h-32 p-3 mt-1 border rounded"
+                                    placeholder="Paste your license data here"
+                                    onChange={e => setLicensedFile(e.target.value)}
+                                >
+                                </textarea> */}
+                            </div>  
                         </div>
                     </div>
                         <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4" onClick={handleFileUpload}>
