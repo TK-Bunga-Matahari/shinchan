@@ -77,7 +77,7 @@ const TaskAssignments = () => {
 
         try {
             const idToken = await auth.currentUser.getIdToken(true);
-            const response = await fetch('https://3303-36-92-133-90.ngrok-free.app/upload', {
+            const response = await fetch('https://dev-task-backend-d7nbrinueq-et.a.run.app/upload', {
                 method: 'POST',
                 body: formData,
                 headers: {
